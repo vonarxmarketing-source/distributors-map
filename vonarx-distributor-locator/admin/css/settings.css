@@ -1,0 +1,55 @@
+.vonarx-settings-form h2 {
+	margin-top: 1.5em;
+}
+
+.vonarx-logo-uploader {
+	margin-bottom: 1em;
+}
+
+.vonarx-logo-dropzone {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 250px;
+	height: 140px;
+	padding: 0;
+	background: #f5f6f8;
+	border: 2px dashed #c3c9d3;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.vonarx-logo-dropzone:hover,
+.vonarx-logo-dropzone:focus-visible {
+	border-color: #1c2b4a;
+	background: #eef1f6;
+}
+
+.vonarx-logo-preview {
+	max-width: 100%;
+	max-height: 100%;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+.vonarx-logo-placeholder-text {
+	color: #6b7280;
+	font-size: 13px;
+}
+
+.vonarx-logo-file-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+
+.vonarx-logo-remove {
+	display: block;
+	margin-top: 0.5em;
+	color: #b32d2e;
+}

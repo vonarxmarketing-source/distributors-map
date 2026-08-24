@@ -1,0 +1,15 @@
+{
+  "name": "vonarx-distributor-locator-install-test",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Clean WordPress instance for testing the packaged plugin ZIP (install-from-upload, not dev-mounted)",
+  "scripts": {
+    "start": "wp-env start",
+    "stop": "wp-env stop",
+    "destroy": "wp-env destroy",
+    "cli": "wp-env run cli wp"
+  },
+  "devDependencies": {
+    "@wordpress/env": "^10.9.0"
+  }
+}

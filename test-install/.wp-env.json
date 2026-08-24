@@ -1,0 +1,11 @@
+{
+  "core": "https://downloads.wordpress.org/release/wordpress-7.0.4.zip",
+  "phpVersion": "8.2",
+  "plugins": [],
+  "port": 8890,
+  "testsPort": 8891,
+  "config": {
+    "WP_DEBUG": true,
+    "SCRIPT_DEBUG": true
+  }
+}

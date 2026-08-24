@@ -1,0 +1,16 @@
+{
+  "name": "vonarx-distributor-locator-env",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local WordPress dev environment for the VonArx Distributor Locator plugin",
+  "scripts": {
+    "start": "wp-env start",
+    "stop": "wp-env stop",
+    "destroy": "wp-env destroy",
+    "logs": "wp-env logs",
+    "cli": "wp-env run cli wp"
+  },
+  "devDependencies": {
+    "@wordpress/env": "^10.9.0"
+  }
+}
