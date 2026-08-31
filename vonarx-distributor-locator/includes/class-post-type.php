@@ -9,9 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Vonarx_Locator_Post_Type {
 
 	const POST_TYPE = 'vonarx_location';
+	const TAXONOMY  = 'vonarx_product_group';
 
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_post_type' ) );
+		add_action( 'init', array( $this, 'register_taxonomy' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_meta' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
@@ -66,6 +68,32 @@ class Vonarx_Locator_Post_Type {
 		);
 	}
 
+	/**
+	 * Hierarchical (category-style) taxonomy so the admin editor gets the
+	 * standard checkbox meta box with an inline "+ Add New Product Group"
+	 * link — no custom UI needed to grow the list beyond the seeded terms.
+	 */
+	public function register_taxonomy() {
+		register_taxonomy(
+			self::TAXONOMY,
+			self::POST_TYPE,
+			array(
+				'labels'            => array(
+					'name'          => __( 'Product Groups', 'vonarx-distributor-locator' ),
+					'singular_name' => __( 'Product Group', 'vonarx-distributor-locator' ),
+					'add_new_item'  => __( 'Add New Product Group', 'vonarx-distributor-locator' ),
+					'search_items'  => __( 'Search Product Groups', 'vonarx-distributor-locator' ),
+				),
+				'hierarchical'      => true,
+				'public'            => false,
+				'show_ui'           => true,
+				'show_admin_column' => true,
+				'show_in_rest'      => false,
+				'rewrite'           => false,
+			)
+		);
+	}
+
 	public function add_meta_boxes() {
 		add_meta_box(
 			'vonarx_location_details',
@@ -88,7 +116,7 @@ class Vonarx_Locator_Post_Type {
 			'country' => __( 'Country', 'vonarx-distributor-locator' ),
 			'phone'   => __( 'Phone', 'vonarx-distributor-locator' ),
 			'email'   => __( 'Email', 'vonarx-distributor-locator' ),
-			'hours'   => __( 'Hours', 'vonarx-distributor-locator' ),
+			'website' => __( 'Website', 'vonarx-distributor-locator' ),
 		);
 
 		echo '<table class="form-table"><tbody>';
@@ -165,7 +193,7 @@ class Vonarx_Locator_Post_Type {
 			return;
 		}
 
-		$text_fields = array( 'address', 'city', 'state', 'zip', 'country', 'phone', 'email', 'hours' );
+		$text_fields = array( 'address', 'city', 'state', 'zip', 'country', 'phone', 'email' );
 		foreach ( $text_fields as $field ) {
 			if ( isset( $_POST[ 'vonarx_' . $field ] ) ) {
 				update_post_meta(
@@ -174,6 +202,10 @@ class Vonarx_Locator_Post_Type {
 					sanitize_text_field( wp_unslash( $_POST[ 'vonarx_' . $field ] ) )
 				);
 			}
+		}
+
+		if ( isset( $_POST['vonarx_website'] ) ) {
+			update_post_meta( $post_id, '_vonarx_website', esc_url_raw( wp_unslash( $_POST['vonarx_website'] ) ) );
 		}
 
 		if ( isset( $_POST['vonarx_lat'] ) ) {

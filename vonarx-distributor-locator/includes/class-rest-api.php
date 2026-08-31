@@ -21,7 +21,11 @@ class Vonarx_Locator_REST_API {
 				'callback'            => array( $this, 'get_locations' ),
 				'permission_callback' => '__return_true',
 				'args'                => array(
-					'search' => array(
+					'search'   => array(
+						'type'     => 'string',
+						'required' => false,
+					),
+					'category' => array(
 						'type'     => 'string',
 						'required' => false,
 					),
@@ -31,7 +35,13 @@ class Vonarx_Locator_REST_API {
 	}
 
 	public function get_locations( $request ) {
-		$search = $request->get_param( 'search' );
+		$search   = $request->get_param( 'search' );
+		$category = $request->get_param( 'category' );
+
+		$requested_categories = array();
+		if ( $category ) {
+			$requested_categories = array_filter( array_map( 'trim', explode( ',', $category ) ) );
+		}
 
 		$query = new WP_Query(
 			array(
@@ -69,10 +79,15 @@ class Vonarx_Locator_REST_API {
 				'country' => get_post_meta( $post->ID, '_vonarx_country', true ),
 				'phone'   => get_post_meta( $post->ID, '_vonarx_phone', true ),
 				'email'   => get_post_meta( $post->ID, '_vonarx_email', true ),
-				'hours'   => get_post_meta( $post->ID, '_vonarx_hours', true ),
+				'website' => get_post_meta( $post->ID, '_vonarx_website', true ),
 				'logo'    => $logo_id ? wp_get_attachment_image_url( $logo_id, 'full' ) : '',
 				'lat'     => (float) $lat,
 				'lng'     => (float) $lng,
+				'product_groups' => wp_get_post_terms(
+					$post->ID,
+					Vonarx_Locator_Post_Type::TAXONOMY,
+					array( 'fields' => 'slugs' )
+				),
 			);
 
 			if ( $search ) {
@@ -80,6 +95,10 @@ class Vonarx_Locator_REST_API {
 				if ( false === strpos( $haystack, strtolower( $search ) ) ) {
 					continue;
 				}
+			}
+
+			if ( $requested_categories && ! array_intersect( $requested_categories, $location['product_groups'] ) ) {
+				continue;
 			}
 
 			$locations[] = $location;

@@ -12,7 +12,7 @@ Manage VonArx distributor locations and display them on an interactive map with 
 
 == Description ==
 
-* Adds a "Distributor Locations" admin screen for managing name, address, phone, hours, and map coordinates.
+* Adds a "Distributor Locations" admin screen for managing name, address, phone, Product Groups, and map coordinates.
 * Coordinates can be dropped/dragged on an admin map or auto-filled from the address via geocoding.
 * The `[vonarx_locator]` shortcode renders a searchable list plus an interactive Leaflet/OpenStreetMap map on any page or post.
 * No API keys required (OpenStreetMap tiles + Nominatim geocoding).

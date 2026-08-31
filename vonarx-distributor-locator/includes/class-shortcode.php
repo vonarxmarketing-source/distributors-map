@@ -8,24 +8,63 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Vonarx_Locator_Shortcode {
 
-	/**
-	 * Product categories for the top bar's filter chips. UI-only for now —
-	 * locations don't carry a category yet, so selections are tracked in JS
-	 * (onCategoryFilterChange) but don't filter results until that data exists.
-	 */
-	const CATEGORIES = array(
-		'scarifiers'      => 'Scarifiers',
-		'shavers'         => 'Shavers',
-		'dust-extractors' => 'Dust extractors',
-		'shotblasters'    => 'Shotblasters',
-		'dust-collectors' => 'Dust collectors',
-		'grinders'        => 'Grinders',
-		'pneumatic-tools' => 'Pneumatic tools',
-	);
-
 	public function __construct() {
 		add_shortcode( 'vonarx_locator', array( $this, 'render' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_assets' ) );
+	}
+
+	/**
+	 * Top bar filter chips, sourced from the vonarx_product_group taxonomy
+	 * (slug => name) so newly added Product Groups show up automatically.
+	 */
+	private function get_categories() {
+		$terms = get_terms(
+			array(
+				'taxonomy'   => Vonarx_Locator_Post_Type::TAXONOMY,
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			)
+		);
+
+		$categories = array();
+		if ( ! is_wp_error( $terms ) ) {
+			foreach ( $terms as $term ) {
+				$categories[ $term->slug ] = $term->name;
+			}
+		}
+		return $categories;
+	}
+
+	/**
+	 * Applies the admin's Typography & Colors settings (Vonarx_Locator_
+	 * Settings) as inline overrides of the .vonarx-locator CSS custom
+	 * properties — attached to our own registered stylesheet via
+	 * wp_add_inline_style(), so it always loads after (and wins over)
+	 * locator.css's defaults, independent of whatever the active theme does.
+	 */
+	private function enqueue_style_overrides() {
+		$settings = Vonarx_Locator_Settings::get_settings();
+		$map      = array(
+			'font_size_base'   => '--font-size-base',
+			'font_size_small'  => '--font-size-sm',
+			'color_primary'    => '--color-primary',
+			'color_accent'     => '--color-accent',
+			'color_text'       => '--color-text',
+			'color_text_muted' => '--color-text-muted',
+		);
+
+		$declarations = array();
+		foreach ( $map as $setting_key => $css_var ) {
+			$default = isset( Vonarx_Locator_Settings::STYLE_DEFAULTS[ $setting_key ] ) ? Vonarx_Locator_Settings::STYLE_DEFAULTS[ $setting_key ] : '';
+			if ( ! empty( $settings[ $setting_key ] ) && $settings[ $setting_key ] !== $default ) {
+				$declarations[] = $css_var . ': ' . $settings[ $setting_key ] . ';';
+			}
+		}
+
+		if ( $declarations ) {
+			wp_add_inline_style( 'vonarx-locator', '.vonarx-locator { ' . implode( ' ', $declarations ) . ' }' );
+		}
 	}
 
 	public function register_assets() {
@@ -66,7 +105,7 @@ class Vonarx_Locator_Shortcode {
 			'vonarxLocatorSettings',
 			array(
 				'restUrl'    => esc_url_raw( rest_url( 'vonarx/v1/locations' ) ),
-				'categories' => self::CATEGORIES,
+				'categories' => $this->get_categories(),
 			)
 		);
 	}
@@ -91,40 +130,44 @@ class Vonarx_Locator_Shortcode {
 		wp_enqueue_script( 'leaflet' );
 		wp_enqueue_script( 'vonarx-locator' );
 
+		$this->enqueue_style_overrides();
+
 		ob_start();
 		?>
 		<div class="vonarx-locator" id="vonarx-locator">
 
 			<div class="vonarx-locator__topbar">
 				<div class="vonarx-locator__search-wrap">
-					<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); ?></span>
-					<input
-						type="text"
-						id="vonarx-location-search"
-						class="vonarx-locator__search-input"
-						role="combobox"
-						aria-expanded="false"
-						aria-autocomplete="list"
-						aria-controls="vonarx-location-search-results"
-						autocomplete="off"
-						placeholder="<?php esc_attr_e( 'Search location...', 'vonarx-distributor-locator' ); ?>"
-					/>
-					<button
-						type="button"
-						id="vonarx-locate-btn"
-						class="vonarx-locator__locate-btn"
-						aria-label="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
-						title="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
-					>
-						<?php echo $this->icon( 'locate' ); ?>
-					</button>
-					<ul id="vonarx-location-search-results" class="vonarx-locator__search-results" role="listbox" hidden></ul>
+					<div class="vonarx-locator__search-row">
+						<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); ?></span>
+						<input
+							type="text"
+							id="vonarx-location-search"
+							class="vonarx-locator__search-input"
+							role="combobox"
+							aria-expanded="false"
+							aria-autocomplete="list"
+							aria-controls="vonarx-location-search-results"
+							autocomplete="off"
+							placeholder="<?php esc_attr_e( 'Search location...', 'vonarx-distributor-locator' ); ?>"
+						/>
+						<button
+							type="button"
+							id="vonarx-locate-btn"
+							class="vonarx-locator__locate-btn"
+							aria-label="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
+							title="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
+						>
+							<?php echo $this->icon( 'locate' ); ?>
+						</button>
+						<ul id="vonarx-location-search-results" class="vonarx-locator__search-results" role="listbox" hidden></ul>
+					</div>
 					<div id="vonarx-locate-status" class="vonarx-locator__locate-status" role="status" aria-live="polite" hidden></div>
 				</div>
 
 				<div class="vonarx-locator__chips-row">
 					<div class="vonarx-locator__chips" id="vonarx-category-chips" role="group" aria-label="<?php esc_attr_e( 'Filter by category', 'vonarx-distributor-locator' ); ?>">
-						<?php foreach ( self::CATEGORIES as $slug => $label ) : ?>
+						<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
 							<button type="button" class="vonarx-chip" data-category="<?php echo esc_attr( $slug ); ?>" aria-pressed="false">
 								<?php echo esc_html( $label ); ?>
 							</button>

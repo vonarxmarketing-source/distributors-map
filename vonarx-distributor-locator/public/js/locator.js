@@ -38,18 +38,29 @@
 			return '<img class="' + className + '" src="' + escapeHtml( store.logo ) + '" alt="" />';
 		}
 
+		function categoryLabel( slug ) {
+			var categories = ( window.vonarxLocatorSettings && vonarxLocatorSettings.categories ) || {};
+			return categories[ slug ] || slug;
+		}
+
 		function storeDetailsHtml( store ) {
-			var html = '<div class="vonarx-popup-header">' +
-				'<h3>' + escapeHtml( store.name ) + '</h3>' +
-				logoImgHtml( store, 'vonarx-popup-logo' ) +
-				'</div>';
+			// Logo floated (not flexed alongside just the name) so the rest of
+			// the text — name, categories, address, phone — wraps around it.
+			var html = logoImgHtml( store, 'vonarx-popup-logo' );
+			html += '<h3>' + escapeHtml( store.name ) + '</h3>';
+			if ( store.product_groups && store.product_groups.length ) {
+				html += '<p class="vonarx-popup-categories">' +
+					escapeHtml( store.product_groups.map( categoryLabel ).join( ', ' ) ) +
+					'</p>';
+			}
 			html += '<p>' + escapeHtml( store.address ) + '</p>';
 			html += '<p>' + escapeHtml( store.city ) + ', ' + escapeHtml( store.state ) + ' ' + escapeHtml( store.zip ) + '</p>';
 			if ( store.phone ) {
 				html += '<p>' + escapeHtml( store.phone ) + '</p>';
 			}
-			if ( store.hours ) {
-				html += '<p>' + escapeHtml( store.hours ) + '</p>';
+			if ( store.website ) {
+				html += '<a href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer" class="vonarx-popup-visit-us">' +
+					'Visit us</a>';
 			}
 			return html;
 		}
@@ -93,12 +104,7 @@
 		 * — only shown if the store actually has a sidebar entry to jump to.
 		 */
 		function openDesktopPopup( store, marker ) {
-			var html = '<div class="vonarx-popup-body">' + storeDetailsHtml( store );
-			if ( getSidebarItem( store.id ) ) {
-				html += '<button type="button" class="vonarx-popup-view-details" data-id="' + store.id + '">' +
-					'View details</button>';
-			}
-			html += '</div>';
+			var html = '<div class="vonarx-popup-body">' + storeDetailsHtml( store ) + '</div>';
 
 			marker.unbindPopup();
 			marker.bindPopup( html, {
@@ -127,12 +133,17 @@
 		}
 
 		function handleStoreSelected( store, marker, triggeredByMarker ) {
-			map.setView( marker.getLatLng(), 12, { animate: true } );
-
 			if ( desktopMql.matches ) {
 				openDesktopPopup( store, marker );
+				// setView AFTER opening the popup: Leaflet's own openPopup()
+				// auto-pans the map to fit the popup on screen, which would
+				// otherwise shift the marker away from true center. Doing our
+				// own centering last guarantees it wins.
+				map.setView( marker.getLatLng(), 12, { animate: true } );
 				return;
 			}
+
+			map.setView( marker.getLatLng(), 12, { animate: true } );
 
 			if ( ! triggeredByMarker ) {
 				highlightSidebarEntry( store.id, { scroll: false, expand: false } );
@@ -142,6 +153,7 @@
 			var hasSidebarEntry = highlightSidebarEntry( store.id, { scroll: true, expand: true } );
 			if ( ! hasSidebarEntry ) {
 				openMobileFallbackPopup( store, marker );
+				map.setView( marker.getLatLng(), 12, { animate: true } );
 			}
 		}
 
@@ -157,21 +169,13 @@
 			} );
 		}
 
-		// Delegated handler for the "View details" button inside desktop popups.
-		mapEl.addEventListener( 'click', function ( e ) {
-			var btn = e.target.closest( '.vonarx-popup-view-details' );
-			if ( ! btn ) {
-				return;
-			}
-			highlightSidebarEntry( btn.dataset.id, { scroll: true, expand: true } );
-		} );
-
 		// Same icon markup as PHP's icon() method (class-shortcode.php), kept
 		// in sync by hand since these list items are rendered client-side.
 		var ICONS = {
 			pin: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18s6-5.5 6-10a6 6 0 10-12 0c0 4.5 6 10 6 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>',
 			mail: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5.5L10 11l6.5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 			phone: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3h2.2l1 3.6-1.7 1.2a9 9 0 004.7 4.7l1.2-1.7 3.6 1V15a2 2 0 01-2.2 2 14 14 0 01-10.8-10.8A2 2 0 015 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+			website: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h14M10 3c2.5 2 2.5 12 0 14M10 3c-2.5 2-2.5 12 0 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
 		};
 
 		function storeCardHtml( store ) {
@@ -195,6 +199,12 @@
 				content += '<div class="vonarx-locator__item-row">' +
 					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.phone + '</span>' +
 					'<a href="tel:' + escapeHtml( store.phone.replace( /[^0-9+]/g, '' ) ) + '">' + escapeHtml( store.phone ) + '</a></div>';
+			}
+			if ( store.website ) {
+				var websiteDomain = store.website.replace( /^https?:\/\//i, '' ).replace( /\/.*$/, '' );
+				content += '<div class="vonarx-locator__item-row">' +
+					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.website + '</span>' +
+					'<a href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml( websiteDomain ) + '</a></div>';
 			}
 
 			// Logo sits to the right of the card's text content.
@@ -262,12 +272,18 @@
 		}
 
 		var currentStores = [];
+		var currentSearchQuery = '';
+		var selectedCategories = [];
 
-		function loadStores( query ) {
-			var url = vonarxLocatorSettings.restUrl;
-			if ( query ) {
-				url += '?search=' + encodeURIComponent( query );
+		function loadStores() {
+			var params = [];
+			if ( currentSearchQuery ) {
+				params.push( 'search=' + encodeURIComponent( currentSearchQuery ) );
 			}
+			if ( selectedCategories.length ) {
+				params.push( 'category=' + encodeURIComponent( selectedCategories.join( ',' ) ) );
+			}
+			var url = vonarxLocatorSettings.restUrl + ( params.length ? '?' + params.join( '&' ) : '' );
 
 			fetch( url )
 				.then( function ( res ) {
@@ -435,7 +451,8 @@
 		 * still useful in the meantime.
 		 */
 		function onSearch( query ) {
-			loadStores( query );
+			currentSearchQuery = query;
+			loadStores();
 		}
 
 		var searchInput = document.getElementById( 'vonarx-location-search' );
@@ -452,16 +469,13 @@
 		}
 
 		/**
-		 * Top bar: category filter chips.
-		 *
-		 * Locations don't carry a category yet, so this only tracks selection
-		 * state and the "Clear all" affordance. Wire real filtering into
-		 * onCategoryFilterChange() once locations expose a category.
+		 * Top bar: category filter chips. Selecting one or more re-fetches
+		 * locations from the REST API filtered by Product Group (see
+		 * class-rest-api.php's `category` param), same as the search field.
 		 */
-		var selectedCategories = [];
-
 		function onCategoryFilterChange( categories ) {
-			// Stub: no category data on locations yet.
+			selectedCategories = categories;
+			loadStores();
 		}
 
 		var chipsContainer = document.getElementById( 'vonarx-category-chips' );

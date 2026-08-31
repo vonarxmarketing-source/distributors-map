@@ -17,12 +17,29 @@ class Vonarx_Locator_Settings {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
+	/**
+	 * Widget defaults (locator.css's own :root/.vonarx-locator values) shown
+	 * as the starting point in the admin color/size pickers, and used to
+	 * fall back to if a setting is somehow missing or invalid.
+	 */
+	const STYLE_DEFAULTS = array(
+		'font_size_base'  => '0.9375rem',
+		'font_size_small' => '0.8125rem',
+		'color_primary'     => '#1c2b4a',
+		'color_accent'      => '#94acff',
+		'color_text'        => '#1c2b4a',
+		'color_text_muted'  => '#6b7280',
+	);
+
 	public static function get_settings() {
-		$defaults = array(
-			'logo_id' => 0,
-			'address' => '',
-			'email'   => '',
-			'phone'   => '',
+		$defaults = array_merge(
+			array(
+				'logo_id' => 0,
+				'address' => '',
+				'email'   => '',
+				'phone'   => '',
+			),
+			self::STYLE_DEFAULTS
 		);
 		return wp_parse_args( get_option( self::OPTION_KEY, array() ), $defaults );
 	}
@@ -87,6 +104,27 @@ class Vonarx_Locator_Settings {
 			$settings['phone'] = $phone;
 		} else {
 			add_settings_error( 'vonarx_locator_settings', 'invalid_phone', __( 'That phone number doesn\'t look valid — it was not saved.', 'vonarx-distributor-locator' ) );
+		}
+
+		foreach ( array_keys( self::STYLE_DEFAULTS ) as $key ) {
+			$field_name = 'vonarx_' . $key;
+			if ( ! isset( $_POST[ $field_name ] ) ) {
+				continue;
+			}
+			$value = sanitize_text_field( wp_unslash( $_POST[ $field_name ] ) );
+
+			if ( 0 === strpos( $key, 'color_' ) ) {
+				$hex = sanitize_hex_color( $value );
+				if ( $hex ) {
+					$settings[ $key ] = $hex;
+				} else {
+					add_settings_error( 'vonarx_locator_settings', 'invalid_' . $key, __( 'That color value looks invalid — it was not saved.', 'vonarx-distributor-locator' ) );
+				}
+			} elseif ( preg_match( '/^\d+(\.\d+)?(px|rem|em)$/', $value ) ) {
+				$settings[ $key ] = $value;
+			} else {
+				add_settings_error( 'vonarx_locator_settings', 'invalid_' . $key, __( 'Font sizes must be a number followed by px, rem, or em (e.g. 15px) — that value was not saved.', 'vonarx-distributor-locator' ) );
+			}
 		}
 
 		$remove_logo = ! empty( $_POST['vonarx_remove_logo'] );
@@ -237,6 +275,41 @@ class Vonarx_Locator_Settings {
 					<tr>
 						<th><label for="vonarx_phone"><?php esc_html_e( 'Phone', 'vonarx-distributor-locator' ); ?></label></th>
 						<td><input type="tel" name="vonarx_phone" id="vonarx_phone" value="<?php echo esc_attr( $settings['phone'] ); ?>" class="regular-text" /></td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Typography &amp; Colors', 'vonarx-distributor-locator' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Overrides the widget\'s own look, independent of your active theme\'s fonts/colors.', 'vonarx-distributor-locator' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th><label for="vonarx_font_size_base"><?php esc_html_e( 'Base Font Size', 'vonarx-distributor-locator' ); ?></label></th>
+						<td>
+							<input type="text" name="vonarx_font_size_base" id="vonarx_font_size_base" value="<?php echo esc_attr( $settings['font_size_base'] ); ?>" class="small-text" placeholder="0.9375rem" />
+							<p class="description"><?php esc_html_e( 'Names, search box, and other primary text. e.g. 15px or 0.9375rem.', 'vonarx-distributor-locator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_font_size_small"><?php esc_html_e( 'Small Text Size', 'vonarx-distributor-locator' ); ?></label></th>
+						<td>
+							<input type="text" name="vonarx_font_size_small" id="vonarx_font_size_small" value="<?php echo esc_attr( $settings['font_size_small'] ); ?>" class="small-text" placeholder="0.8125rem" />
+							<p class="description"><?php esc_html_e( 'Addresses, phone, category tags, and other secondary text.', 'vonarx-distributor-locator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_primary"><?php esc_html_e( 'Primary Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_primary" id="vonarx_color_primary" value="<?php echo esc_attr( $settings['color_primary'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_accent"><?php esc_html_e( 'Accent Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_accent" id="vonarx_color_accent" value="<?php echo esc_attr( $settings['color_accent'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_text"><?php esc_html_e( 'Text Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_text" id="vonarx_color_text" value="<?php echo esc_attr( $settings['color_text'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_text_muted"><?php esc_html_e( 'Muted Text Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_text_muted" id="vonarx_color_text_muted" value="<?php echo esc_attr( $settings['color_text_muted'] ); ?>" /></td>
 					</tr>
 				</table>
 

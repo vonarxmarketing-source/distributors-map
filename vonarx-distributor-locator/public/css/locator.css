@@ -38,6 +38,8 @@
 
 	display: flex;
 	flex-direction: column;
+	max-height: 800px;
+	overflow-y: auto;
 	background: var(--color-bg);
 	color: var(--color-text);
 	font-family: var(--font-family-base);
@@ -73,8 +75,18 @@
 }
 
 .vonarx-locator__search-wrap {
-	position: relative;
 	flex: 0 0 280px;
+}
+
+/* Positioning context for the icon/input/locate-button/results-dropdown,
+   kept separate from .search-wrap itself: #vonarx-locate-status is an
+   in-flow sibling below this row (not absolutely positioned, so it can grow
+   the top bar instead of overlaying it — see its own comment). If the
+   icon/button used top:50% relative to .search-wrap directly, showing that
+   status message would grow .search-wrap's height and shift 50% down with
+   it, knocking the icons out of alignment with the input field. */
+.vonarx-locator__search-row {
+	position: relative;
 }
 
 .vonarx-locator__search-icon {
@@ -387,7 +399,11 @@
 
 .vonarx-locator__sidebar-content {
 	overflow-y: auto;
-	max-height: 60vh;
+	/* Large enough to never actually clip the list — the outer
+	   .vonarx-locator now caps/scrolls the whole widget at 800px, so this
+	   only needs to stay a fixed (non-"none") value for the collapse
+	   transition below to animate smoothly. */
+	max-height: 2000px;
 	transition: max-height 0.25s ease, padding 0.25s ease;
 }
 
@@ -500,7 +516,7 @@ a.vonarx-locator__contact-value:hover {
 
 .vonarx-locator__item-inner {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
 	gap: 12px;
 }
@@ -512,8 +528,8 @@ a.vonarx-locator__contact-value:hover {
 
 .vonarx-locator__item-logo {
 	flex: 0 0 auto;
-	width: 44px;
-	height: 44px;
+	width: 95px;
+	height: 95px;
 	object-fit: contain;
 	border-radius: 6px;
 }
@@ -577,12 +593,24 @@ a.vonarx-locator__contact-value:hover {
 	margin: 0 0 0.3rem;
 	color: var(--color-primary);
 	font-size: var(--font-size-base);
+	font-weight: var(--font-weight-semibold);
 }
 
 .vonarx-locator .leaflet-popup-content p {
 	margin: 0.15rem 0;
 	font-size: var(--font-size-sm);
 	color: var(--color-text-muted);
+	font-weight: var(--font-weight-semibold);
+}
+
+/* Selector qualified with the class + type combo (not just .vonarx-popup-
+   categories alone) so its specificity beats the general popup <p> rule
+   above, which would otherwise win and override this smaller font size. */
+.vonarx-locator .leaflet-popup-content p.vonarx-popup-categories {
+	margin: 0 0 0.3rem;
+	font-size: 0.7rem;
+	font-weight: var(--font-weight-regular);
+	color: #1E5AA8;
 }
 
 /* ---- Marker popups ---- */
@@ -596,27 +624,32 @@ a.vonarx-locator__contact-value:hover {
 	font-family: var(--font-family-base);
 }
 
-.vonarx-popup-header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 10px;
+/* overflow:auto establishes a new block formatting context, which makes
+   this element's own height fully contain the floated .vonarx-popup-logo
+   below — without it, a float can visually poke out past its parent. */
+.vonarx-popup-body {
+	overflow: auto;
 }
 
-.vonarx-popup-header h3 {
-	flex: 1 1 auto;
-	min-width: 0;
+.vonarx-popup-body h3 {
+	white-space: normal;
+	overflow-wrap: break-word;
 }
 
 .vonarx-popup-logo {
-	flex: 0 0 auto;
-	width: 36px;
-	height: 36px;
+	float: right;
+	width: 95px;
+	height: 95px;
+	margin: 0 0 8px 10px;
 	object-fit: contain;
 	border-radius: 6px;
 }
 
-.vonarx-popup-view-details {
+/* Selector qualified with the .vonarx-popup-body ancestor (rather than just
+   .vonarx-popup-visit-us alone) so its specificity beats Leaflet's own
+   ".leaflet-container a { color: #0078A8; }" rule, which otherwise wins and
+   makes the button text render Leaflet's default link blue. */
+.vonarx-popup-body .vonarx-popup-visit-us {
 	display: inline-block;
 	margin-top: 8px;
 	padding: 6px 14px;
@@ -627,11 +660,13 @@ a.vonarx-locator__contact-value:hover {
 	font-family: inherit;
 	font-size: var(--font-size-sm);
 	font-weight: var(--font-weight-medium);
+	text-decoration: none;
 	cursor: pointer;
 }
 
-.vonarx-popup-view-details:hover {
+.vonarx-popup-body .vonarx-popup-visit-us:hover {
 	background: var(--color-primary-dark);
+	color: #d1d5db;
 }
 
 /* Desktop/tablet-landscape (>=1024px): compact popup, 280-320px wide, capped

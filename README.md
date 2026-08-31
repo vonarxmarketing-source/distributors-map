@@ -73,7 +73,7 @@ Then spin up the separate `test-install/` environment (`cd test-install && npm i
 
 ## How it works
 
-- **Distributor Locations** is a custom post type: title, address, city, state, zip, country, phone, email, hours, lat/lng, and a logo.
+- **Distributor Locations** is a custom post type: title, address, city, state, zip, country, phone, email, lat/lng, a logo, and one or more Product Groups (a `vonarx_product_group` taxonomy — category-style, with an "+ Add New Product Group" affordance right in the editor).
 - The REST endpoint (`/wp-json/vonarx/v1/locations`) powers the frontend map/sidebar and is sorted by country, then name; `?search=` filters by name/city/state/country/zip.
 - No API keys required anywhere — map tiles and geocoding both use OpenStreetMap (Nominatim).
 
