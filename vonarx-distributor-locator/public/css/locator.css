@@ -666,7 +666,7 @@ a.vonarx-locator__contact-value:hover {
 	display: flex;
 	align-items: center;
 	gap: 24px;
-	margin-top: 48px;
+	margin-top: 36px;
 }
 
 /* Qualified with the .vonarx-locator__item-actions ancestor (rather than

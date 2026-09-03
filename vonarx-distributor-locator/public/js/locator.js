@@ -267,10 +267,10 @@
 			} );
 
 			if ( bounds.length ) {
-				// 9 is 50% of the tile layer's maxZoom (18) above — the closest
-			// the results view is allowed to zoom in, even for a tightly
-			// clustered set of results.
-			map.fitBounds( bounds, { padding: [ 40, 40 ], maxZoom: 9 } );
+				// 18 is the tile layer's own maxZoom above — Leaflet can't
+				// zoom in past that regardless, so this cap is effectively
+				// "let it zoom in as far as the results need."
+				map.fitBounds( bounds, { padding: [ 40, 40 ], maxZoom: 18 } );
 			}
 		}
 

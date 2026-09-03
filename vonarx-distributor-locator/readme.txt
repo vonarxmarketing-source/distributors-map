@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.2.1 =
+* Sidebar cards: reduced the space above the email/phone/website buttons from 48px to 36px.
+* Map: default/auto-fit zoom can now go all the way to the tile layer's own max (18) instead of being capped at 9.
 
 = 1.2.0 =
 * Map popups: replaced the "Visit us" website link with a "View Routes" button that opens Google Maps directions to that location's coordinates.
