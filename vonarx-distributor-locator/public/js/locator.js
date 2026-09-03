@@ -128,17 +128,17 @@
 		}
 
 		/**
-		 * Tablet-portrait/mobile (<1024px): no floating popup on marker tap —
-		 * the sidebar entry is highlighted/scrolled to instead. This fallback
-		 * popup only appears for a marker with no sidebar counterpart to jump
-		 * to (e.g. filtered out of the list but still shown on the map).
+		 * Tablet-portrait/mobile (<1024px) marker tap: same popup bubble as
+		 * desktop, styled full-width for the smaller screen. Always shown —
+		 * see handleStoreSelected() below, which also highlights/scrolls to
+		 * the matching sidebar entry alongside it.
 		 */
-		function openMobileFallbackPopup( store, marker ) {
+		function openMobilePopup( store, marker ) {
 			var html = '<div class="vonarx-popup-body">' + storeDetailsHtml( store ) + '</div>';
 
 			marker.unbindPopup();
 			marker.bindPopup( html, {
-				className: 'vonarx-popup vonarx-popup--mobile-fallback',
+				className: 'vonarx-popup vonarx-popup--mobile',
 			} );
 			marker.openPopup();
 		}
@@ -159,18 +159,19 @@
 				return;
 			}
 
-			map.setView( marker.getLatLng(), 12, { animate: true } );
-
 			if ( ! triggeredByMarker ) {
+				map.setView( marker.getLatLng(), 12, { animate: true } );
 				highlightSidebarEntry( store.id, { scroll: false, expand: false } );
 				return;
 			}
 
-			var hasSidebarEntry = highlightSidebarEntry( store.id, { scroll: true, expand: true } );
-			if ( ! hasSidebarEntry ) {
-				openMobileFallbackPopup( store, marker );
-				map.setView( marker.getLatLng(), 12, { animate: true } );
-			}
+			openMobilePopup( store, marker );
+			highlightSidebarEntry( store.id, { scroll: true, expand: true } );
+			// setView AFTER opening the popup — same reasoning as the desktop
+			// branch above: Leaflet's own openPopup() auto-pans the map to
+			// fit the popup on screen, which would otherwise shift the
+			// marker away from true center.
+			map.setView( marker.getLatLng(), 12, { animate: true } );
 		}
 
 		// Close any open popup when crossing the breakpoint so a desktop-style

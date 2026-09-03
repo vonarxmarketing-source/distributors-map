@@ -24,6 +24,7 @@
 	--color-white: #ffffff;
 	--color-popup-btn-bg: #1c2b4a;
 	--color-popup-btn-text: #ffffff;
+	--color-popup-btn-bg-hover: #1c2b4a;
 	--color-item-action-bg: #3e55a5;
 	--color-item-action-bg-hover: #18253f;
 
@@ -833,10 +834,9 @@ a.vonarx-locator__contact-value:hover {
 	cursor: pointer;
 }
 
-/* brightness() rather than a second custom color: works correctly no
-   matter what background color the admin picks above. */
 .vonarx-popup-body .vonarx-popup-view-routes:hover {
-	filter: brightness(0.85);
+	background: var(--color-popup-btn-bg-hover);
+	color: var(--color-popup-btn-text);
 }
 
 /* Desktop/tablet-landscape (>=1024px): compact popup, 280-320px wide, capped
@@ -845,17 +845,16 @@ a.vonarx-locator__contact-value:hover {
 	overflow-x: hidden;
 }
 
-/* Tablet-portrait/mobile (<1024px) fallback popup: only shown for markers
-   with no sidebar counterpart. 85vw wide with a 44px (tap-friendly) close
-   button. The !important overrides Leaflet's own inline width, which it
-   sets in JS on these elements. */
-.vonarx-popup--mobile-fallback .leaflet-popup-content-wrapper,
-.vonarx-popup--mobile-fallback .leaflet-popup-content {
+/* Tablet-portrait/mobile (<1024px): 85vw wide with a 44px (tap-friendly)
+   close button. The !important overrides Leaflet's own inline width, which
+   it sets in JS on these elements. */
+.vonarx-popup--mobile .leaflet-popup-content-wrapper,
+.vonarx-popup--mobile .leaflet-popup-content {
 	width: 85vw !important;
 	max-width: 85vw;
 }
 
-.vonarx-popup--mobile-fallback .leaflet-popup-close-button {
+.vonarx-popup--mobile .leaflet-popup-close-button {
 	width: 44px;
 	height: 44px;
 	display: flex;
