@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.3.0 =
+* Widget height is now a fixed 700px (was up to 800px on mobile, full viewport height on desktop/tablet-landscape).
+* Sidebar results list: each country is now a single-open accordion section instead of a flat grouped list — selecting one closes the rest automatically.
 
 = 1.2.2 =
 * Map: fixed the default (unfiltered) view actually ignoring zoom-cap changes — it was auto-fitting to every distributor worldwide on every load, which always zoomed out regardless of the cap. Now it only auto-fits once you search or filter by category; the default view stays fixed on a Europe center/zoom.

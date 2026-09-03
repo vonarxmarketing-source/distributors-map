@@ -84,6 +84,14 @@
 				return false;
 			}
 
+			// The item's country group may be collapsed (only one is open at
+			// a time) — open it first, otherwise scrollIntoView() below is a
+			// no-op on a display:none element.
+			var countryGroup = item.closest( '.vonarx-locator__country-group' );
+			if ( countryGroup ) {
+				selectCountryGroup( countryGroup );
+			}
+
 			document.querySelectorAll( '.vonarx-locator__item' ).forEach( function ( el ) {
 				el.classList.toggle( 'active', el === item );
 			} );
@@ -185,6 +193,35 @@
 			website: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h14M10 3c2.5 2 2.5 12 0 14M10 3c-2.5 2-2.5 12 0 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
 		};
 
+		// Same chevron markup as PHP's icon('chevron') (class-shortcode.php).
+		var CHEVRON_ICON = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+		function setCountryGroupOpen( groupEl, isOpen ) {
+			var heading = groupEl.querySelector( '.vonarx-locator__group-heading' );
+			var items = groupEl.querySelector( '.vonarx-locator__group-items' );
+			groupEl.classList.toggle( 'is-open', isOpen );
+			if ( heading ) {
+				heading.setAttribute( 'aria-expanded', isOpen ? 'true' : 'false' );
+			}
+			if ( items ) {
+				items.hidden = ! isOpen;
+			}
+		}
+
+		/**
+		 * Single-open accordion: opens groupEl and closes every other country
+		 * group in the sidebar list. Selecting the already-open group is a
+		 * no-op (like a tab, it stays open) rather than collapsing to none.
+		 */
+		function selectCountryGroup( groupEl ) {
+			if ( ! groupEl ) {
+				return;
+			}
+			storeListEl.querySelectorAll( '.vonarx-locator__country-group' ).forEach( function ( g ) {
+				setCountryGroupOpen( g, g === groupEl );
+			} );
+		}
+
 		function storeCardHtml( store ) {
 			var content = '<h3>' + escapeHtml( store.name ) + '</h3>';
 
@@ -225,18 +262,45 @@
 				return;
 			}
 
-			// Stores already arrive sorted by country from the REST API;
-			// group consecutive same-country entries under a heading.
+			// Stores already arrive sorted by country from the REST API; group
+			// consecutive same-country entries into a collapsible accordion
+			// section each. Only the first one starts open — see
+			// selectCountryGroup() above for the single-open behavior.
+			var currentGroup = null;
 			var lastCountry = null;
+			var isFirstGroup = true;
 
 			stores.forEach( function ( store ) {
 				var country = store.country || 'Other';
 				if ( country !== lastCountry ) {
-					var heading = document.createElement( 'li' );
+					currentGroup = document.createElement( 'li' );
+					currentGroup.className = 'vonarx-locator__country-group';
+					currentGroup.classList.toggle( 'is-open', isFirstGroup );
+
+					var heading = document.createElement( 'button' );
+					heading.type = 'button';
 					heading.className = 'vonarx-locator__group-heading';
-					heading.textContent = country;
-					storeListEl.appendChild( heading );
+					heading.setAttribute( 'aria-expanded', isFirstGroup ? 'true' : 'false' );
+					heading.innerHTML = '<span>' + escapeHtml( country ) + '</span>' +
+						'<span class="vonarx-locator__group-chevron" aria-hidden="true">' + CHEVRON_ICON + '</span>';
+					// this.closest(...) rather than closing over currentGroup:
+					// currentGroup gets reassigned as the loop continues, so a
+					// closure over it would always resolve to the last group
+					// by the time this fires.
+					heading.addEventListener( 'click', function () {
+						selectCountryGroup( this.closest( '.vonarx-locator__country-group' ) );
+					} );
+
+					var itemsList = document.createElement( 'ul' );
+					itemsList.className = 'vonarx-locator__group-items';
+					itemsList.hidden = ! isFirstGroup;
+
+					currentGroup.appendChild( heading );
+					currentGroup.appendChild( itemsList );
+					storeListEl.appendChild( currentGroup );
+
 					lastCountry = country;
+					isFirstGroup = false;
 				}
 
 				var li = document.createElement( 'li' );
@@ -249,7 +313,7 @@
 						handleStoreSelected( store, marker, false );
 					}
 				} );
-				storeListEl.appendChild( li );
+				currentGroup.querySelector( '.vonarx-locator__group-items' ).appendChild( li );
 			} );
 		}
 
