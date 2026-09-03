@@ -2,7 +2,7 @@
 /**
  * Plugin Name: VonArx Distributor Locator
  * Description: Manage and display VonArx distributor locations on an interactive map via the [vonarx_locator] shortcode.
- * Version: 1.2.1
+ * Version: 1.2.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: VonArx Distributors
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-define( 'VONARX_LOCATOR_VERSION', '1.2.1' );
+define( 'VONARX_LOCATOR_VERSION', '1.2.2' );
 define( 'VONARX_LOCATOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'VONARX_LOCATOR_URL', plugin_dir_url( __FILE__ ) );
 

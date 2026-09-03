@@ -5,7 +5,10 @@
 			return;
 		}
 
-		var map = L.map( mapEl ).setView( [ 39.5, -98.35 ], 4 );
+		// Center/zoom for the default (unfiltered) view — see renderMarkers()
+		// below, which keeps this instead of auto-fitting to every
+		// distributor worldwide.
+		var map = L.map( mapEl ).setView( [ 54.5, 15.3 ], 4 );
 		L.tileLayer( 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '&copy; OpenStreetMap contributors',
 			maxZoom: 18,
@@ -266,7 +269,14 @@
 				bounds.push( [ store.lat, store.lng ] );
 			} );
 
-			if ( bounds.length ) {
+			// Only auto-fit once the visitor has actually filtered results
+			// down (search or category chips/dropdown) — the default,
+			// unfiltered "all locations" view stays on the fixed Europe
+			// center/zoom set above instead of zooming out to fit every
+			// distributor worldwide, which is what made earlier zoom-cap
+			// tweaks here look like they had no effect.
+			var isFiltered = !! currentSearchQuery || selectedCategories.length > 0;
+			if ( isFiltered && bounds.length ) {
 				// 18 is the tile layer's own maxZoom above — Leaflet can't
 				// zoom in past that regardless, so this cap is effectively
 				// "let it zoom in as far as the results need."
