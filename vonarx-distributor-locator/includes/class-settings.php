@@ -23,12 +23,17 @@ class Vonarx_Locator_Settings {
 	 * fall back to if a setting is somehow missing or invalid.
 	 */
 	const STYLE_DEFAULTS = array(
-		'font_size_base'  => '0.9375rem',
-		'font_size_small' => '0.8125rem',
-		'color_primary'     => '#1c2b4a',
-		'color_accent'      => '#94acff',
-		'color_text'        => '#1c2b4a',
-		'color_text_muted'  => '#6b7280',
+		'font_size_base'       => '0.9375rem',
+		'font_size_small'      => '0.8125rem',
+		'font_size_chip'       => '0.75rem',
+		'font_size_popup_tag'  => '0.7rem',
+		'font_size_popup_btn'  => '0.8125rem',
+		'color_primary'        => '#1c2b4a',
+		'color_accent'         => '#94acff',
+		'color_text'           => '#1c2b4a',
+		'color_text_muted'     => '#6b7280',
+		'color_popup_btn_bg'   => '#1c2b4a',
+		'color_popup_btn_text' => '#ffffff',
 	);
 
 	public static function get_settings() {
@@ -165,7 +170,11 @@ class Vonarx_Locator_Settings {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 
-		$file = $_FILES[ $field_name ];
+		// No nonce check here: this shared helper has no form of its own.
+		// Both callers (this class's maybe_save() above, and
+		// Vonarx_Locator_Post_Type::save_meta()) already verify their own
+		// nonce and capability before reaching this point.
+		$file = $_FILES[ $field_name ]; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		// SVG is deliberately excluded: wp_handle_upload() rejects it by
 		// default regardless of what's allowed here (WordPress core blocks
@@ -279,7 +288,7 @@ class Vonarx_Locator_Settings {
 				</table>
 
 				<h2><?php esc_html_e( 'Typography &amp; Colors', 'vonarx-distributor-locator' ); ?></h2>
-				<p class="description"><?php esc_html_e( 'Overrides the widget\'s own look, independent of your active theme\'s fonts/colors.', 'vonarx-distributor-locator' ); ?></p>
+				<p class="description"><?php esc_html_e( 'The widget always renders in your active theme\'s own font — only the sizes below and the colors are overridable, independent of your theme.', 'vonarx-distributor-locator' ); ?></p>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th><label for="vonarx_font_size_base"><?php esc_html_e( 'Base Font Size', 'vonarx-distributor-locator' ); ?></label></th>
@@ -292,7 +301,21 @@ class Vonarx_Locator_Settings {
 						<th><label for="vonarx_font_size_small"><?php esc_html_e( 'Small Text Size', 'vonarx-distributor-locator' ); ?></label></th>
 						<td>
 							<input type="text" name="vonarx_font_size_small" id="vonarx_font_size_small" value="<?php echo esc_attr( $settings['font_size_small'] ); ?>" class="small-text" placeholder="0.8125rem" />
-							<p class="description"><?php esc_html_e( 'Addresses, phone, category tags, and other secondary text.', 'vonarx-distributor-locator' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Results heading, map popup address text, and other secondary text — in the sidebar and in map popups.', 'vonarx-distributor-locator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_font_size_chip"><?php esc_html_e( 'Filter Chip Text Size', 'vonarx-distributor-locator' ); ?></label></th>
+						<td>
+							<input type="text" name="vonarx_font_size_chip" id="vonarx_font_size_chip" value="<?php echo esc_attr( $settings['font_size_chip'] ); ?>" class="small-text" placeholder="0.75rem" />
+							<p class="description"><?php esc_html_e( 'The category filter chips in the top bar.', 'vonarx-distributor-locator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_font_size_popup_tag"><?php esc_html_e( 'Category Tag Size', 'vonarx-distributor-locator' ); ?></label></th>
+						<td>
+							<input type="text" name="vonarx_font_size_popup_tag" id="vonarx_font_size_popup_tag" value="<?php echo esc_attr( $settings['font_size_popup_tag'] ); ?>" class="small-text" placeholder="0.7rem" />
+							<p class="description"><?php esc_html_e( 'The Product Group category line on each sidebar card and inside a marker\'s map popup.', 'vonarx-distributor-locator' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -310,6 +333,25 @@ class Vonarx_Locator_Settings {
 					<tr>
 						<th><label for="vonarx_color_text_muted"><?php esc_html_e( 'Muted Text Color', 'vonarx-distributor-locator' ); ?></label></th>
 						<td><input type="color" name="vonarx_color_text_muted" id="vonarx_color_text_muted" value="<?php echo esc_attr( $settings['color_text_muted'] ); ?>" /></td>
+					</tr>
+				</table>
+
+				<h3><?php esc_html_e( 'Popup "Visit us" Button', 'vonarx-distributor-locator' ); ?></h3>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th><label for="vonarx_font_size_popup_btn"><?php esc_html_e( 'Button Text Size', 'vonarx-distributor-locator' ); ?></label></th>
+						<td>
+							<input type="text" name="vonarx_font_size_popup_btn" id="vonarx_font_size_popup_btn" value="<?php echo esc_attr( $settings['font_size_popup_btn'] ); ?>" class="small-text" placeholder="0.8125rem" />
+							<p class="description"><?php esc_html_e( 'The "Visit us" button inside a marker\'s map popup.', 'vonarx-distributor-locator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_popup_btn_bg"><?php esc_html_e( 'Button Background Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_popup_btn_bg" id="vonarx_color_popup_btn_bg" value="<?php echo esc_attr( $settings['color_popup_btn_bg'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th><label for="vonarx_color_popup_btn_text"><?php esc_html_e( 'Button Text Color', 'vonarx-distributor-locator' ); ?></label></th>
+						<td><input type="color" name="vonarx_color_popup_btn_text" id="vonarx_color_popup_btn_text" value="<?php echo esc_attr( $settings['color_popup_btn_text'] ); ?>" /></td>
 					</tr>
 				</table>
 

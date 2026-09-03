@@ -22,12 +22,14 @@ class Vonarx_Locator_REST_API {
 				'permission_callback' => '__return_true',
 				'args'                => array(
 					'search'   => array(
-						'type'     => 'string',
-						'required' => false,
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 					'category' => array(
-						'type'     => 'string',
-						'required' => false,
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 			)

@@ -15,16 +15,44 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
 define( 'VONARX_LOCATOR_VERSION', '1.0.0' );
 define( 'VONARX_LOCATOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'VONARX_LOCATOR_URL', plugin_dir_url( __FILE__ ) );
 
+require_once VONARX_LOCATOR_PATH . 'vendor/plugin-update-checker/plugin-update-checker.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-post-type.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-rest-api.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-settings.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-shortcode.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-page-template.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-sample-data.php';
+
+/**
+ * Checks the plugin's GitHub repo for updates instead of WordPress.org,
+ * since this plugin isn't published there. Reads the version number and
+ * download ZIP from a GitHub Release's attached asset (enableReleaseAssets())
+ * rather than the repo's auto-generated branch/tag archive — required here
+ * because the plugin lives in a subdirectory of the repo
+ * (vonarx-distributor-locator/), not at its root, so a whole-repo archive
+ * wouldn't have the right folder structure to install as an update.
+ *
+ * No releases exist on the repo yet, so until one is published with a
+ * vonarx-distributor-locator.zip asset attached (matching dist/, built via
+ * the project's own zip step), this simply finds nothing to update to.
+ */
+function vonarx_locator_init_update_checker() {
+	$update_checker = PucFactory::buildUpdateChecker(
+		'https://github.com/vonarxmarketing-source/distributors-map/',
+		__FILE__,
+		'vonarx-distributor-locator'
+	);
+
+	$update_checker->setBranch( 'main' );
+	$update_checker->getVcsApi()->enableReleaseAssets( '/\.zip($|[?&#])/i' );
+}
+add_action( 'plugins_loaded', 'vonarx_locator_init_update_checker' );
 
 /**
  * Boot the plugin's components.

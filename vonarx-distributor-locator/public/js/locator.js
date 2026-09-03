@@ -45,7 +45,7 @@
 
 		function storeDetailsHtml( store ) {
 			// Logo floated (not flexed alongside just the name) so the rest of
-			// the text — name, categories, address, phone — wraps around it.
+			// the text — name, categories, address — wraps around it.
 			var html = logoImgHtml( store, 'vonarx-popup-logo' );
 			html += '<h3>' + escapeHtml( store.name ) + '</h3>';
 			if ( store.product_groups && store.product_groups.length ) {
@@ -55,9 +55,6 @@
 			}
 			html += '<p>' + escapeHtml( store.address ) + '</p>';
 			html += '<p>' + escapeHtml( store.city ) + ', ' + escapeHtml( store.state ) + ' ' + escapeHtml( store.zip ) + '</p>';
-			if ( store.phone ) {
-				html += '<p>' + escapeHtml( store.phone ) + '</p>';
-			}
 			if ( store.website ) {
 				html += '<a href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer" class="vonarx-popup-visit-us">' +
 					'Visit us</a>';
@@ -135,6 +132,11 @@
 		function handleStoreSelected( store, marker, triggeredByMarker ) {
 			if ( desktopMql.matches ) {
 				openDesktopPopup( store, marker );
+				// Mirror the selection in the sidebar list alongside the
+				// popup — same highlight/scroll the non-desktop path below
+				// uses. No-ops harmlessly if this store has no sidebar entry
+				// to jump to (e.g. filtered out of the list).
+				highlightSidebarEntry( store.id, { scroll: true, expand: true } );
 				// setView AFTER opening the popup: Leaflet's own openPopup()
 				// auto-pans the map to fit the popup on screen, which would
 				// otherwise shift the marker away from true center. Doing our
@@ -172,39 +174,34 @@
 		// Same icon markup as PHP's icon() method (class-shortcode.php), kept
 		// in sync by hand since these list items are rendered client-side.
 		var ICONS = {
-			pin: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 18s6-5.5 6-10a6 6 0 10-12 0c0 4.5 6 10 6 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>',
 			mail: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 5.5L10 11l6.5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 			phone: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3h2.2l1 3.6-1.7 1.2a9 9 0 004.7 4.7l1.2-1.7 3.6 1V15a2 2 0 01-2.2 2 14 14 0 01-10.8-10.8A2 2 0 015 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
 			website: '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h14M10 3c2.5 2 2.5 12 0 14M10 3c-2.5 2-2.5 12 0 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
 		};
 
 		function storeCardHtml( store ) {
-			var addressLine = [ store.address, [ store.city, store.state ].filter( Boolean ).join( ', ' ), store.zip ]
-				.filter( Boolean )
-				.join( ', ' );
-
 			var content = '<h3>' + escapeHtml( store.name ) + '</h3>';
 
-			if ( addressLine ) {
-				content += '<div class="vonarx-locator__item-row">' +
-					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.pin + '</span>' +
-					'<span>' + escapeHtml( addressLine ) + '</span></div>';
+			if ( store.product_groups && store.product_groups.length ) {
+				content += '<p class="vonarx-locator__item-categories">' +
+					escapeHtml( store.product_groups.map( categoryLabel ).join( ', ' ) ) +
+					'</p>';
 			}
+			// Icon-only circular buttons rather than the raw address/value as
+			// text — aria-label/title carry the accessible name ("Email" etc.)
+			// since there's no room to also show it visually in the circle.
+			var actions = '';
 			if ( store.email ) {
-				content += '<div class="vonarx-locator__item-row">' +
-					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.mail + '</span>' +
-					'<a href="mailto:' + escapeHtml( store.email ) + '">' + escapeHtml( store.email ) + '</a></div>';
+				actions += '<a class="vonarx-locator__item-action" href="mailto:' + escapeHtml( store.email ) + '" aria-label="Email" title="Email">' + ICONS.mail + '</a>';
 			}
 			if ( store.phone ) {
-				content += '<div class="vonarx-locator__item-row">' +
-					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.phone + '</span>' +
-					'<a href="tel:' + escapeHtml( store.phone.replace( /[^0-9+]/g, '' ) ) + '">' + escapeHtml( store.phone ) + '</a></div>';
+				actions += '<a class="vonarx-locator__item-action" href="tel:' + escapeHtml( store.phone.replace( /[^0-9+]/g, '' ) ) + '" aria-label="Phone" title="Phone">' + ICONS.phone + '</a>';
 			}
 			if ( store.website ) {
-				var websiteDomain = store.website.replace( /^https?:\/\//i, '' ).replace( /\/.*$/, '' );
-				content += '<div class="vonarx-locator__item-row">' +
-					'<span class="vonarx-locator__item-icon" aria-hidden="true">' + ICONS.website + '</span>' +
-					'<a href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml( websiteDomain ) + '</a></div>';
+				actions += '<a class="vonarx-locator__item-action" href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer" aria-label="Website" title="Website">' + ICONS.website + '</a>';
+			}
+			if ( actions ) {
+				content += '<div class="vonarx-locator__item-actions">' + actions + '</div>';
 			}
 
 			// Logo sits to the right of the card's text content.
@@ -267,7 +264,10 @@
 			} );
 
 			if ( bounds.length ) {
-				map.fitBounds( bounds, { padding: [ 40, 40 ], maxZoom: 10 } );
+				// 9 is 50% of the tile layer's maxZoom (18) above — the closest
+			// the results view is allowed to zoom in, even for a tightly
+			// clustered set of results.
+			map.fitBounds( bounds, { padding: [ 40, 40 ], maxZoom: 9 } );
 			}
 		}
 
@@ -469,9 +469,17 @@
 		}
 
 		/**
-		 * Top bar: category filter chips. Selecting one or more re-fetches
+		 * Top bar: category filter. Selecting one or more re-fetches
 		 * locations from the REST API filtered by Product Group (see
 		 * class-rest-api.php's `category` param), same as the search field.
+		 *
+		 * Two UIs share the same selectedCategories state: a row of toggle
+		 * chips (>=1024px) and a checkbox-list-in-a-popover (<1024px, CSS
+		 * swaps which is visible). syncCategoryFilterUi() keeps both — plus
+		 * the dropdown's label and the shared "Clear all" button — in sync
+		 * regardless of which one a change came from, so switching
+		 * breakpoints mid-session (e.g. rotating a tablet) never shows a
+		 * stale selection.
 		 */
 		function onCategoryFilterChange( categories ) {
 			selectedCategories = categories;
@@ -480,44 +488,98 @@
 
 		var chipsContainer = document.getElementById( 'vonarx-category-chips' );
 		var clearChipsBtn = document.getElementById( 'vonarx-clear-chips' );
+		var categoryDropdown = document.getElementById( 'vonarx-category-dropdown' );
+		var categoryDropdownToggle = document.getElementById( 'vonarx-category-dropdown-toggle' );
+		var categoryDropdownPanel = document.getElementById( 'vonarx-category-dropdown-panel' );
+		var categoryDropdownLabelEl = categoryDropdownToggle ?
+			categoryDropdownToggle.querySelector( '.vonarx-locator__category-dropdown-label' ) : null;
+		var categoryDropdownDefaultLabel = categoryDropdownLabelEl ? categoryDropdownLabelEl.textContent : '';
 
-		function updateClearChipsVisibility() {
+		function syncCategoryFilterUi() {
+			if ( chipsContainer ) {
+				chipsContainer.querySelectorAll( '.vonarx-chip' ).forEach( function ( chip ) {
+					chip.setAttribute( 'aria-pressed', selectedCategories.indexOf( chip.dataset.category ) !== -1 ? 'true' : 'false' );
+				} );
+			}
+			if ( categoryDropdownPanel ) {
+				categoryDropdownPanel.querySelectorAll( '.vonarx-locator__category-dropdown-checkbox' ).forEach( function ( checkbox ) {
+					checkbox.checked = selectedCategories.indexOf( checkbox.value ) !== -1;
+				} );
+			}
+			if ( categoryDropdownLabelEl ) {
+				categoryDropdownLabelEl.textContent = selectedCategories.length ?
+					categoryDropdownDefaultLabel + ' (' + selectedCategories.length + ')' :
+					categoryDropdownDefaultLabel;
+			}
 			if ( clearChipsBtn ) {
 				clearChipsBtn.hidden = selectedCategories.length === 0;
 			}
 		}
 
+		function toggleCategory( category ) {
+			var index = selectedCategories.indexOf( category );
+			if ( index === -1 ) {
+				selectedCategories.push( category );
+			} else {
+				selectedCategories.splice( index, 1 );
+			}
+			syncCategoryFilterUi();
+			onCategoryFilterChange( selectedCategories );
+		}
+
 		if ( chipsContainer ) {
 			chipsContainer.addEventListener( 'click', function ( e ) {
 				var chip = e.target.closest( '.vonarx-chip' );
-				if ( ! chip ) {
+				if ( chip ) {
+					toggleCategory( chip.dataset.category );
+				}
+			} );
+		}
+
+		function closeCategoryDropdown() {
+			if ( ! categoryDropdown || ! categoryDropdown.classList.contains( 'is-open' ) ) {
+				return;
+			}
+			categoryDropdown.classList.remove( 'is-open' );
+			categoryDropdownToggle.setAttribute( 'aria-expanded', 'false' );
+			categoryDropdownPanel.hidden = true;
+		}
+
+		if ( categoryDropdown && categoryDropdownToggle && categoryDropdownPanel ) {
+			categoryDropdownToggle.addEventListener( 'click', function () {
+				if ( categoryDropdown.classList.contains( 'is-open' ) ) {
+					closeCategoryDropdown();
 					return;
 				}
-				var category = chip.dataset.category;
-				var isActive = chip.getAttribute( 'aria-pressed' ) === 'true';
+				categoryDropdown.classList.add( 'is-open' );
+				categoryDropdownToggle.setAttribute( 'aria-expanded', 'true' );
+				categoryDropdownPanel.hidden = false;
+			} );
 
-				if ( isActive ) {
-					chip.setAttribute( 'aria-pressed', 'false' );
-					selectedCategories = selectedCategories.filter( function ( c ) {
-						return c !== category;
-					} );
-				} else {
-					chip.setAttribute( 'aria-pressed', 'true' );
-					selectedCategories.push( category );
+			categoryDropdownPanel.addEventListener( 'change', function ( e ) {
+				var checkbox = e.target.closest( '.vonarx-locator__category-dropdown-checkbox' );
+				if ( checkbox ) {
+					toggleCategory( checkbox.value );
 				}
+			} );
 
-				updateClearChipsVisibility();
-				onCategoryFilterChange( selectedCategories );
+			document.addEventListener( 'click', function ( e ) {
+				if ( ! categoryDropdown.contains( e.target ) ) {
+					closeCategoryDropdown();
+				}
+			} );
+
+			document.addEventListener( 'keydown', function ( e ) {
+				if ( e.key === 'Escape' ) {
+					closeCategoryDropdown();
+				}
 			} );
 		}
 
 		if ( clearChipsBtn ) {
 			clearChipsBtn.addEventListener( 'click', function () {
 				selectedCategories = [];
-				chipsContainer.querySelectorAll( '.vonarx-chip' ).forEach( function ( chip ) {
-					chip.setAttribute( 'aria-pressed', 'false' );
-				} );
-				updateClearChipsVisibility();
+				syncCategoryFilterUi();
 				onCategoryFilterChange( selectedCategories );
 			} );
 		}

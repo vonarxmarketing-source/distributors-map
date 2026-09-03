@@ -46,12 +46,17 @@ class Vonarx_Locator_Shortcode {
 	private function enqueue_style_overrides() {
 		$settings = Vonarx_Locator_Settings::get_settings();
 		$map      = array(
-			'font_size_base'   => '--font-size-base',
-			'font_size_small'  => '--font-size-sm',
-			'color_primary'    => '--color-primary',
-			'color_accent'     => '--color-accent',
-			'color_text'       => '--color-text',
-			'color_text_muted' => '--color-text-muted',
+			'font_size_base'       => '--font-size-base',
+			'font_size_small'      => '--font-size-sm',
+			'font_size_chip'       => '--font-size-chip',
+			'font_size_popup_tag'  => '--font-size-popup-tag',
+			'font_size_popup_btn'  => '--font-size-popup-btn',
+			'color_primary'        => '--color-primary',
+			'color_accent'         => '--color-accent',
+			'color_text'           => '--color-text',
+			'color_text_muted'     => '--color-text-muted',
+			'color_popup_btn_bg'   => '--color-popup-btn-bg',
+			'color_popup_btn_text' => '--color-popup-btn-text',
 		);
 
 		$declarations = array();
@@ -68,13 +73,6 @@ class Vonarx_Locator_Shortcode {
 	}
 
 	public function register_assets() {
-		wp_register_style(
-			'vonarx-google-fonts',
-			'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-			array(),
-			null
-		);
-
 		wp_register_style( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
 		wp_register_script( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 
@@ -88,7 +86,7 @@ class Vonarx_Locator_Shortcode {
 		wp_register_style(
 			'vonarx-locator',
 			VONARX_LOCATOR_URL . 'public/css/locator.css',
-			array( 'leaflet', 'vonarx-google-fonts' ),
+			array( 'leaflet' ),
 			file_exists( $css_path ) ? filemtime( $css_path ) : VONARX_LOCATOR_VERSION
 		);
 
@@ -110,6 +108,15 @@ class Vonarx_Locator_Shortcode {
 		);
 	}
 
+	/**
+	 * Returns hardcoded inline SVG markup for one of a fixed set of icon
+	 * names, echoed unescaped by callers below. Safe: $name is always a
+	 * hardcoded literal passed by this class's own render() (never derived
+	 * from request/user input), and every returned string is one of the
+	 * static SVG literals below — there is nothing here for an attacker to
+	 * control, so escaping (which would just entity-encode the markup into
+	 * visible text) isn't applicable.
+	 */
 	private function icon( $name ) {
 		$icons = array(
 			'search' => '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="6.25" stroke="currentColor" stroke-width="1.5"/><path d="M17 17L13.6 13.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
@@ -125,7 +132,6 @@ class Vonarx_Locator_Shortcode {
 
 	public function render( $atts ) {
 		wp_enqueue_style( 'leaflet' );
-		wp_enqueue_style( 'vonarx-google-fonts' );
 		wp_enqueue_style( 'vonarx-locator' );
 		wp_enqueue_script( 'leaflet' );
 		wp_enqueue_script( 'vonarx-locator' );
@@ -139,7 +145,7 @@ class Vonarx_Locator_Shortcode {
 			<div class="vonarx-locator__topbar">
 				<div class="vonarx-locator__search-wrap">
 					<div class="vonarx-locator__search-row">
-						<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); ?></span>
+						<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
 						<input
 							type="text"
 							id="vonarx-location-search"
@@ -158,7 +164,7 @@ class Vonarx_Locator_Shortcode {
 							aria-label="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
 							title="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
 						>
-							<?php echo $this->icon( 'locate' ); ?>
+							<?php echo $this->icon( 'locate' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
 						</button>
 						<ul id="vonarx-location-search-results" class="vonarx-locator__search-results" role="listbox" hidden></ul>
 					</div>
@@ -173,8 +179,39 @@ class Vonarx_Locator_Shortcode {
 							</button>
 						<?php endforeach; ?>
 					</div>
+
+					<!-- Mobile/tablet-portrait (<1024px) equivalent of the chips above:
+					     a checkbox-list-in-a-popover instead of a row of toggle chips.
+					     Shares the same selection state via JS; CSS shows only one of
+					     the two depending on viewport width. -->
+					<div class="vonarx-locator__category-dropdown" id="vonarx-category-dropdown">
+						<button
+							type="button"
+							class="vonarx-locator__category-dropdown-toggle"
+							id="vonarx-category-dropdown-toggle"
+							aria-haspopup="true"
+							aria-expanded="false"
+							aria-controls="vonarx-category-dropdown-panel"
+						>
+							<span class="vonarx-locator__category-dropdown-label"><?php esc_html_e( 'Filter by category', 'vonarx-distributor-locator' ); ?></span>
+							<span class="vonarx-locator__category-dropdown-icon" aria-hidden="true"><?php echo $this->icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
+						</button>
+						<div class="vonarx-locator__category-dropdown-panel" id="vonarx-category-dropdown-panel" hidden>
+							<ul class="vonarx-locator__category-dropdown-list">
+								<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
+									<li>
+										<label class="vonarx-locator__category-dropdown-item">
+											<input type="checkbox" class="vonarx-locator__category-dropdown-checkbox" value="<?php echo esc_attr( $slug ); ?>" />
+											<span><?php echo esc_html( $label ); ?></span>
+										</label>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					</div>
+
 					<button type="button" class="vonarx-locator__clear-chips" id="vonarx-clear-chips" hidden>
-						<?php echo $this->icon( 'x' ); ?>
+						<?php echo $this->icon( 'x' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
 						<?php esc_html_e( 'Clear all', 'vonarx-distributor-locator' ); ?>
 					</button>
 				</div>
@@ -184,7 +221,7 @@ class Vonarx_Locator_Shortcode {
 				<div class="vonarx-locator__map-wrap">
 					<div id="vonarx-map" class="vonarx-locator__map"></div>
 					<button type="button" id="vonarx-map-locate-btn" class="vonarx-locator__map-locate-btn">
-						<?php echo $this->icon( 'locate' ); ?>
+						<?php echo $this->icon( 'locate' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
 						<span><?php esc_html_e( 'Use my location', 'vonarx-distributor-locator' ); ?></span>
 					</button>
 				</div>
@@ -198,7 +235,7 @@ class Vonarx_Locator_Shortcode {
 						aria-controls="vonarx-locator-sidebar-content"
 					>
 						<span class="vonarx-locator__toggle-label"><?php esc_html_e( 'Distributors', 'vonarx-distributor-locator' ); ?></span>
-						<span class="vonarx-locator__toggle-icon" aria-hidden="true"><?php echo $this->icon( 'chevron' ); ?></span>
+						<span class="vonarx-locator__toggle-icon" aria-hidden="true"><?php echo $this->icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
 					</button>
 
 					<div class="vonarx-locator__sidebar-content" id="vonarx-locator-sidebar-content">
