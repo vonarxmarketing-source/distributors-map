@@ -672,7 +672,7 @@ a.vonarx-locator__contact-value:hover {
 /* Qualified with the .vonarx-locator__item-actions ancestor (rather than
    just .vonarx-locator__item-action alone) so its specificity reliably
    beats a theme's own "a" / "a:link" color rule — same fix already applied
-   to .vonarx-popup-visit-us below for the identical problem. The icons are
+   to .vonarx-popup-view-routes below for the identical problem. The icons are
    plain <a> links whose stroke="currentColor" depends on this element's
    `color` cascading down correctly; without the boost, a same-or-higher-
    specificity theme rule can win here (while :hover's extra pseudo-class
@@ -780,10 +780,10 @@ a.vonarx-locator__contact-value:hover {
 }
 
 /* Selector qualified with the .vonarx-popup-body ancestor (rather than just
-   .vonarx-popup-visit-us alone) so its specificity beats Leaflet's own
+   .vonarx-popup-view-routes alone) so its specificity beats Leaflet's own
    ".leaflet-container a { color: #0078A8; }" rule, which otherwise wins and
    makes the button text render Leaflet's default link blue. */
-.vonarx-popup-body .vonarx-popup-visit-us {
+.vonarx-popup-body .vonarx-popup-view-routes {
 	display: inline-block;
 	margin-top: 8px;
 	padding: 6px 14px;
@@ -800,7 +800,7 @@ a.vonarx-locator__contact-value:hover {
 
 /* brightness() rather than a second custom color: works correctly no
    matter what background color the admin picks above. */
-.vonarx-popup-body .vonarx-popup-visit-us:hover {
+.vonarx-popup-body .vonarx-popup-view-routes:hover {
 	filter: brightness(0.85);
 }
 

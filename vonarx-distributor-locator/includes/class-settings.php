@@ -336,13 +336,13 @@ class Vonarx_Locator_Settings {
 					</tr>
 				</table>
 
-				<h3><?php esc_html_e( 'Popup "Visit us" Button', 'vonarx-distributor-locator' ); ?></h3>
+				<h3><?php esc_html_e( 'Popup "View Routes" Button', 'vonarx-distributor-locator' ); ?></h3>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th><label for="vonarx_font_size_popup_btn"><?php esc_html_e( 'Button Text Size', 'vonarx-distributor-locator' ); ?></label></th>
 						<td>
 							<input type="text" name="vonarx_font_size_popup_btn" id="vonarx_font_size_popup_btn" value="<?php echo esc_attr( $settings['font_size_popup_btn'] ); ?>" class="small-text" placeholder="0.8125rem" />
-							<p class="description"><?php esc_html_e( 'The "Visit us" button inside a marker\'s map popup.', 'vonarx-distributor-locator' ); ?></p>
+							<p class="description"><?php esc_html_e( 'The "View Routes" button inside a marker\'s map popup.', 'vonarx-distributor-locator' ); ?></p>
 						</td>
 					</tr>
 					<tr>

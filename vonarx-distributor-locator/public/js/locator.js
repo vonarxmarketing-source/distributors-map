@@ -55,10 +55,13 @@
 			}
 			html += '<p>' + escapeHtml( store.address ) + '</p>';
 			html += '<p>' + escapeHtml( store.city ) + ', ' + escapeHtml( store.state ) + ' ' + escapeHtml( store.zip ) + '</p>';
-			if ( store.website ) {
-				html += '<a href="' + escapeHtml( store.website ) + '" target="_blank" rel="noopener noreferrer" class="vonarx-popup-visit-us">' +
-					'Visit us</a>';
-			}
+			// Every store reaching a popup already has lat/lng (the REST API
+			// only returns locations that have both), so this is unconditional
+			// — unlike the other rows above, which depend on optional fields.
+			html += '<a href="https://www.google.com/maps/dir/?api=1&destination=' +
+				encodeURIComponent( store.lat + ',' + store.lng ) +
+				'" target="_blank" rel="noopener noreferrer" class="vonarx-popup-view-routes">' +
+				'View Routes</a>';
 			return html;
 		}
 
