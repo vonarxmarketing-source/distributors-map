@@ -815,13 +815,24 @@ a.vonarx-locator__contact-value:hover {
 	border-radius: 6px;
 }
 
+/* Wraps "View Routes" and (mobile only) "Go to Contacts" so they sit side
+   by side, wrapping to a second line on narrow screens rather than
+   overflowing. */
+.vonarx-popup-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
 /* Selector qualified with the .vonarx-popup-body ancestor (rather than just
    .vonarx-popup-view-routes alone) so its specificity beats Leaflet's own
    ".leaflet-container a { color: #0078A8; }" rule, which otherwise wins and
-   makes the button text render Leaflet's default link blue. */
+   makes the button text render Leaflet's default link blue. Also matches
+   .vonarx-popup-goto-contacts, which shares this class for identical
+   styling — see storeDetailsHtml() in locator.js. */
 .vonarx-popup-body .vonarx-popup-view-routes {
 	display: inline-block;
-	margin-top: 8px;
 	padding: 6px 14px;
 	background: var(--color-popup-btn-bg);
 	color: var(--color-popup-btn-text);

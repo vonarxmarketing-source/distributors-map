@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.3.2 =
+* Mobile/tablet-portrait: tapping a map pin no longer auto-scrolls to the sidebar card. Its popup now has a "Go to Contacts" button next to "View Routes" for jumping there on demand instead.
 
 = 1.3.1 =
 * Fixed the map popup not appearing on mobile/tablet-portrait when tapping a marker — it now always shows, alongside highlighting the matching sidebar card.

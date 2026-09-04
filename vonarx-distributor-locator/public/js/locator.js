@@ -46,7 +46,8 @@
 			return categories[ slug ] || slug;
 		}
 
-		function storeDetailsHtml( store ) {
+		function storeDetailsHtml( store, opts ) {
+			opts = opts || {};
 			// Logo floated (not flexed alongside just the name) so the rest of
 			// the text — name, categories, address — wraps around it.
 			var html = logoImgHtml( store, 'vonarx-popup-logo' );
@@ -61,10 +62,18 @@
 			// Every store reaching a popup already has lat/lng (the REST API
 			// only returns locations that have both), so this is unconditional
 			// — unlike the other rows above, which depend on optional fields.
-			html += '<a href="https://www.google.com/maps/dir/?api=1&destination=' +
+			var actionsHtml = '<a href="https://www.google.com/maps/dir/?api=1&destination=' +
 				encodeURIComponent( store.lat + ',' + store.lng ) +
 				'" target="_blank" rel="noopener noreferrer" class="vonarx-popup-view-routes">' +
 				'View Routes</a>';
+			// Mobile only (see openMobilePopup): a manual, opt-in way to jump
+			// to the sidebar card instead of doing it automatically on every
+			// marker tap, which would yank the visitor away from the map.
+			if ( opts.showContactsLink ) {
+				actionsHtml += '<button type="button" class="vonarx-popup-view-routes vonarx-popup-goto-contacts">' +
+					'Go to Contacts</button>';
+			}
+			html += '<div class="vonarx-popup-actions">' + actionsHtml + '</div>';
 			return html;
 		}
 
@@ -129,16 +138,32 @@
 
 		/**
 		 * Tablet-portrait/mobile (<1024px) marker tap: same popup bubble as
-		 * desktop, styled full-width for the smaller screen. Always shown —
-		 * see handleStoreSelected() below, which also highlights/scrolls to
-		 * the matching sidebar entry alongside it.
+		 * desktop, styled full-width for the smaller screen, plus a
+		 * "Go to Contacts" button (see storeDetailsHtml's showContactsLink)
+		 * that jumps to the matching sidebar card on demand — unlike
+		 * desktop, tapping the pin itself doesn't do that automatically.
 		 */
 		function openMobilePopup( store, marker ) {
-			var html = '<div class="vonarx-popup-body">' + storeDetailsHtml( store ) + '</div>';
+			var html = '<div class="vonarx-popup-body">' + storeDetailsHtml( store, { showContactsLink: true } ) + '</div>';
 
 			marker.unbindPopup();
 			marker.bindPopup( html, {
 				className: 'vonarx-popup vonarx-popup--mobile',
+			} );
+			// The button only exists once Leaflet has actually inserted the
+			// popup's HTML into the DOM, so it's wired up here rather than
+			// right after building the HTML string above. once() (not on()):
+			// this popup gets fully rebuilt on every tap, so a plain on()
+			// would pile up a stale listener — closed over this exact
+			// store/marker — on every previous tap of the same pin.
+			marker.once( 'popupopen', function ( e ) {
+				var popupEl = e.popup.getElement();
+				var btn = popupEl && popupEl.querySelector( '.vonarx-popup-goto-contacts' );
+				if ( btn ) {
+					btn.addEventListener( 'click', function () {
+						highlightSidebarEntry( store.id, { scroll: true, expand: true } );
+					} );
+				}
 			} );
 			marker.openPopup();
 		}
@@ -166,7 +191,10 @@
 			}
 
 			openMobilePopup( store, marker );
-			highlightSidebarEntry( store.id, { scroll: true, expand: true } );
+			// No auto-highlight/scroll to the sidebar here (unlike desktop
+			// above) — the popup's own "Go to Contacts" button does that on
+			// demand instead, so tapping a pin doesn't yank the visitor away
+			// from the map they just tapped.
 			// setView AFTER opening the popup — same reasoning as the desktop
 			// branch above: Leaflet's own openPopup() auto-pans the map to
 			// fit the popup on screen, which would otherwise shift the
