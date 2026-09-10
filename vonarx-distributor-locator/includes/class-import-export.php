@@ -38,6 +38,7 @@ class Vonarx_Locator_Import_Export {
 			'phone'          => __( 'Phone', 'vonarx-distributor-locator' ),
 			'email'          => __( 'Email', 'vonarx-distributor-locator' ),
 			'website'        => __( 'Website', 'vonarx-distributor-locator' ),
+			'logo_url'       => __( 'Logo URL', 'vonarx-distributor-locator' ),
 		);
 	}
 
@@ -56,6 +57,7 @@ class Vonarx_Locator_Import_Export {
 		$aliases[ self::normalize_header( 'Postal Code' ) ] = 'zip';
 		$aliases[ self::normalize_header( 'Geolocation' ) ] = 'geolocation';
 		$aliases[ self::normalize_header( 'Coordinates' ) ] = 'geolocation';
+		$aliases[ self::normalize_header( 'Logo' ) ]        = 'logo_url';
 		return $aliases;
 	}
 
@@ -178,8 +180,8 @@ class Vonarx_Locator_Import_Export {
 						<tr><td><?php esc_html_e( 'ID', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'Leave blank to create a new location. Never edit this for an existing row.', 'vonarx-distributor-locator' ); ?></td></tr>
 						<tr><td><?php esc_html_e( 'Company', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'Required. Rows with no company name are skipped.', 'vonarx-distributor-locator' ); ?></td></tr>
 						<tr><td><?php esc_html_e( 'Product Groups', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'Comma-separated, e.g. "Grinders, Scarifiers". Unrecognized names are created automatically.', 'vonarx-distributor-locator' ); ?></td></tr>
-						<tr><td><?php esc_html_e( 'Geolocation (Lat, Lng)', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'A single "latitude, longitude" pair, e.g. "51.5074, -0.1278" — the same format Google Maps shows when you right-click a spot.', 'vonarx-distributor-locator' ); ?></td></tr>
-						<tr><td><?php esc_html_e( 'Logo', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'Not included — set each location\'s logo from its own edit screen.', 'vonarx-distributor-locator' ); ?></td></tr>
+						<tr><td><?php esc_html_e( 'Geolocation (Lat, Lng)', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'A single "latitude, longitude" pair, e.g. "51.5074, -0.1278" — the same format Google Maps shows when you right-click a spot. Leave blank and it\'s auto-filled by looking up the Address/City/State/ZIP/Country columns — if that lookup fails, the location is still saved (with a warning in the import summary, and a "Missing" flag in the Geolocation column of the locations list) so you can set it by hand.', 'vonarx-distributor-locator' ); ?></td></tr>
+						<tr><td><?php esc_html_e( 'Logo URL', 'vonarx-distributor-locator' ); ?></td><td><?php esc_html_e( 'A direct image URL to set/replace that location\'s logo. Leave blank to leave the current logo untouched — this column can only set a logo, not remove one (do that from the location\'s own edit screen, which still also accepts a manual upload).', 'vonarx-distributor-locator' ); ?></td></tr>
 					</tbody>
 				</table>
 			</div>
@@ -197,6 +199,8 @@ class Vonarx_Locator_Import_Export {
 
 		$terms = wp_get_post_terms( $post->ID, Vonarx_Locator_Post_Type::TAXONOMY, array( 'fields' => 'names' ) );
 
+		$logo_id = (int) get_post_meta( $post->ID, '_vonarx_logo_id', true );
+
 		return array(
 			'id'             => $post->ID,
 			'title'          => html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' ),
@@ -210,6 +214,7 @@ class Vonarx_Locator_Import_Export {
 			'phone'          => get_post_meta( $post->ID, '_vonarx_phone', true ),
 			'email'          => get_post_meta( $post->ID, '_vonarx_email', true ),
 			'website'        => get_post_meta( $post->ID, '_vonarx_website', true ),
+			'logo_url'       => $logo_id ? wp_get_attachment_url( $logo_id ) : '',
 		);
 	}
 
@@ -394,21 +399,74 @@ class Vonarx_Locator_Import_Export {
 			}
 
 			if ( isset( $data['geolocation'] ) ) {
-				if ( '' === $data['geolocation'] ) {
-					update_post_meta( $post_id, '_vonarx_lat', '' );
-					update_post_meta( $post_id, '_vonarx_lng', '' );
-				} elseif ( preg_match( '/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/', $data['geolocation'], $m )
-					&& abs( (float) $m[1] ) <= 90 && abs( (float) $m[2] ) <= 180 ) {
-					update_post_meta( $post_id, '_vonarx_lat', $m[1] );
-					update_post_meta( $post_id, '_vonarx_lng', $m[2] );
+				if ( '' !== $data['geolocation'] ) {
+					if ( preg_match( '/^(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)$/', $data['geolocation'], $m )
+						&& abs( (float) $m[1] ) <= 90 && abs( (float) $m[2] ) <= 180 ) {
+						update_post_meta( $post_id, '_vonarx_lat', $m[1] );
+						update_post_meta( $post_id, '_vonarx_lng', $m[2] );
+					} else {
+						$notes[] = sprintf( __( 'Row %1$d: couldn\'t understand Geolocation "%2$s" — left unchanged.', 'vonarx-distributor-locator' ), $line, $data['geolocation'] );
+					}
 				} else {
-					$notes[] = sprintf( __( 'Row %1$d: couldn\'t understand Geolocation "%2$s" — left unchanged.', 'vonarx-distributor-locator' ), $line, $data['geolocation'] );
+					// Geolocation left blank: try to auto-fill it from the
+					// address columns instead of just clearing any existing
+					// pin, so a bulk-added sheet doesn't need coordinates
+					// typed in by hand for every row.
+					$address_parts = array_filter(
+						array(
+							isset( $data['address'] ) ? $data['address'] : '',
+							isset( $data['city'] ) ? $data['city'] : '',
+							isset( $data['state'] ) ? $data['state'] : '',
+							isset( $data['zip'] ) ? $data['zip'] : '',
+							isset( $data['country'] ) ? $data['country'] : '',
+						)
+					);
+
+					$geocoded = $address_parts ? Vonarx_Locator_Geocoder::geocode( implode( ', ', $address_parts ) ) : false;
+
+					if ( $geocoded ) {
+						update_post_meta( $post_id, '_vonarx_lat', $geocoded['lat'] );
+						update_post_meta( $post_id, '_vonarx_lng', $geocoded['lng'] );
+					} else {
+						update_post_meta( $post_id, '_vonarx_lat', '' );
+						update_post_meta( $post_id, '_vonarx_lng', '' );
+						if ( $address_parts ) {
+							$notes[] = sprintf( __( 'Row %1$d: couldn\'t auto-locate the address for "%2$s" — set coordinates manually.', 'vonarx-distributor-locator' ), $line, $title );
+						}
+					}
 				}
 			}
 
 			if ( isset( $data['product_groups'] ) ) {
 				$names = array_filter( array_map( 'trim', explode( ',', $data['product_groups'] ) ) );
 				wp_set_post_terms( $post_id, $this->resolve_term_ids( $names ), Vonarx_Locator_Post_Type::TAXONOMY );
+			}
+
+			// Blank Logo URL means "leave the current logo alone" (unlike the
+			// other columns' blank-clears-it behavior) — this column is only
+			// ever a way to set/replace a logo. Removing one is still done
+			// from the location's own edit screen.
+			if ( isset( $data['logo_url'] ) && '' !== trim( $data['logo_url'] ) ) {
+				$logo_url         = esc_url_raw( trim( $data['logo_url'] ) );
+				$current_logo_id  = (int) get_post_meta( $post_id, '_vonarx_logo_id', true );
+				$current_logo_url = $current_logo_id ? wp_get_attachment_url( $current_logo_id ) : '';
+
+				if ( $logo_url && $logo_url !== $current_logo_url ) {
+					require_once ABSPATH . 'wp-admin/includes/media.php';
+					require_once ABSPATH . 'wp-admin/includes/file.php';
+					require_once ABSPATH . 'wp-admin/includes/image.php';
+
+					$new_logo_id = media_sideload_image( $logo_url, 0, null, 'id' );
+					if ( is_wp_error( $new_logo_id ) ) {
+						$notes[] = sprintf( __( 'Row %1$d: couldn\'t download the logo from "%2$s" — left unchanged.', 'vonarx-distributor-locator' ), $line, $logo_url );
+					} else {
+						Vonarx_Locator_Settings::resize_existing_attachment( $new_logo_id );
+						if ( $current_logo_id ) {
+							wp_delete_attachment( $current_logo_id, true );
+						}
+						update_post_meta( $post_id, '_vonarx_logo_id', $new_logo_id );
+					}
+				}
 			}
 		}
 

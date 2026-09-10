@@ -233,6 +233,36 @@ class Vonarx_Locator_Settings {
 		return $attachment_id;
 	}
 
+	/**
+	 * Resizes an already-created attachment's file down to $max_width if
+	 * it's wider than that, in place — same resize step handle_logo_upload()
+	 * above applies to a fresh upload, but for an attachment that already
+	 * exists (e.g. one sideloaded from a URL during .xlsx import).
+	 */
+	public static function resize_existing_attachment( $attachment_id, $max_width = 250 ) {
+		$file = get_attached_file( $attachment_id );
+		if ( ! $file ) {
+			return;
+		}
+
+		$editor = wp_get_image_editor( $file );
+		if ( is_wp_error( $editor ) ) {
+			return;
+		}
+
+		$size = $editor->get_size();
+		if ( ! $size || $size['width'] <= $max_width ) {
+			return;
+		}
+
+		$target_height = (int) round( $max_width * ( $size['height'] / $size['width'] ) );
+		$editor->resize( $max_width, $target_height, false );
+		$saved = $editor->save( $file );
+		if ( ! is_wp_error( $saved ) ) {
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $saved['path'] ) );
+		}
+	}
+
 	public function render_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;

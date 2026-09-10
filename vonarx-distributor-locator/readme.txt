@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,12 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.5.0 =
+* Fixed a mobile popup CSS bug where a location's logo could visually overflow past the popup card's rounded edge.
+* Import: a blank Geolocation cell is now auto-filled by geocoding the Address/City/State/ZIP/Country columns instead of just clearing the pin; a failed lookup still saves the location and notes it in the import summary.
+* Distributor Locations list: added a "Geolocation" status column flagging any location missing coordinates (which otherwise silently doesn't appear on the map).
+* Import/Export: added a "Logo URL" column — set or replace a location's logo from a direct image URL during import, alongside the existing manual upload on each location's edit screen. Leaving it blank never removes an existing logo.
 
 = 1.4.0 =
 * Added Distributor Locations → Import / Export: download all locations as an .xlsx spreadsheet (Company, Product Groups, Address, City, State/Region, ZIP, Country, Geolocation, Phone, Email, Website), edit it, and re-upload to bulk-update existing locations or add new ones.

@@ -19,6 +19,47 @@ class Vonarx_Locator_Post_Type {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'post_edit_form_tag', array( $this, 'add_form_enctype' ) );
 		add_action( 'admin_notices', array( $this, 'maybe_show_logo_error' ) );
+		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( $this, 'add_geolocation_column' ) );
+		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_geolocation_column' ), 10, 2 );
+	}
+
+	/**
+	 * Inserts a "Geolocation" status column right after the title, so a
+	 * missing/invalid pin (which quietly excludes a location from the map —
+	 * see Vonarx_Locator_REST_API::get_locations()) is visible at a glance
+	 * across the whole list instead of only when opening each location.
+	 */
+	public function add_geolocation_column( $columns ) {
+		$with_geolocation = array();
+		foreach ( $columns as $key => $label ) {
+			$with_geolocation[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$with_geolocation['vonarx_geolocation'] = __( 'Geolocation', 'vonarx-distributor-locator' );
+			}
+		}
+		return $with_geolocation;
+	}
+
+	public function render_geolocation_column( $column, $post_id ) {
+		if ( 'vonarx_geolocation' !== $column ) {
+			return;
+		}
+
+		$lat = get_post_meta( $post_id, '_vonarx_lat', true );
+		$lng = get_post_meta( $post_id, '_vonarx_lng', true );
+
+		if ( '' !== $lat && '' !== $lng ) {
+			printf(
+				'<span class="dashicons dashicons-yes-alt" style="color:#2e7d32;" title="%s"></span>',
+				esc_attr__( 'Coordinates set', 'vonarx-distributor-locator' )
+			);
+		} else {
+			printf(
+				'<span class="dashicons dashicons-warning" style="color:#b32d2e;" title="%1$s"></span> %2$s',
+				esc_attr__( 'Missing coordinates — this location will not appear on the map.', 'vonarx-distributor-locator' ),
+				esc_html__( 'Missing', 'vonarx-distributor-locator' )
+			);
+		}
 	}
 
 	public function maybe_show_logo_error() {

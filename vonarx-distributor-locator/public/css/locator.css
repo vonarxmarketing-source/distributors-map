@@ -788,6 +788,10 @@ a.vonarx-locator__contact-value:hover {
 
 .vonarx-popup .leaflet-popup-content-wrapper {
 	border-radius: 8px;
+	/* Belt-and-suspenders: guarantees nothing inside (e.g. the floated logo)
+	   can ever visually poke out past the rounded card, regardless of any
+	   inner width/margin math. */
+	overflow: hidden;
 }
 
 .vonarx-popup .leaflet-popup-content {
@@ -859,10 +863,21 @@ a.vonarx-locator__contact-value:hover {
 /* Tablet-portrait/mobile (<1024px): 85vw wide with a 44px (tap-friendly)
    close button. The !important overrides Leaflet's own inline width, which
    it sets in JS on these elements. */
-.vonarx-popup--mobile .leaflet-popup-content-wrapper,
-.vonarx-popup--mobile .leaflet-popup-content {
+.vonarx-popup--mobile .leaflet-popup-content-wrapper {
 	width: 85vw !important;
 	max-width: 85vw;
+}
+
+/* .leaflet-popup-content sits inside the wrapper above with its own 14px
+   left/right margin (see ".vonarx-popup .leaflet-popup-content" above) —
+   giving it the SAME 85vw width as its parent would make its margin box
+   wider than the wrapper itself, pushing anything flush against its edge
+   (e.g. the right-floated .vonarx-popup-logo) past the wrapper's right
+   edge. Subtracting that margin here keeps the content's total box
+   (width + margin) equal to the wrapper's 85vw. */
+.vonarx-popup--mobile .leaflet-popup-content {
+	width: calc(85vw - 28px) !important;
+	max-width: calc(85vw - 28px);
 }
 
 .vonarx-popup--mobile .leaflet-popup-close-button {
