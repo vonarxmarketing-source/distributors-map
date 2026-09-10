@@ -68,7 +68,7 @@ class Vonarx_Locator_Shortcode {
 		}
 
 		if ( $declarations ) {
-			wp_add_inline_style( 'vonarx-locator', '.vonarx-locator { ' . implode( ' ', $declarations ) . ' }' );
+			wp_add_inline_style( 'vonarx-locator', '.vonarx-locator-wrap { ' . implode( ' ', $declarations ) . ' }' );
 		}
 	}
 
@@ -140,9 +140,19 @@ class Vonarx_Locator_Shortcode {
 
 		ob_start();
 		?>
-		<div class="vonarx-locator" id="vonarx-locator">
+		<div class="vonarx-locator-wrap" id="vonarx-locator-wrap">
 
-			<div class="vonarx-locator__topbar">
+			<div class="vonarx-directory" id="vonarx-locator-directory">
+				<h2 class="vonarx-directory__heading"><?php esc_html_e( 'Distributors by Country', 'vonarx-distributor-locator' ); ?></h2>
+				<div class="vonarx-directory__body">
+					<div class="vonarx-directory__tabs" id="vonarx-directory-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Distributors by country', 'vonarx-distributor-locator' ); ?>"></div>
+					<div class="vonarx-directory__panels" id="vonarx-directory-panels"></div>
+				</div>
+			</div>
+
+			<div class="vonarx-locator" id="vonarx-locator">
+
+				<div class="vonarx-locator__topbar">
 				<div class="vonarx-locator__search-wrap">
 					<div class="vonarx-locator__search-row">
 						<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
@@ -248,6 +258,8 @@ class Vonarx_Locator_Shortcode {
 					</div>
 				</aside>
 			</div>
+			</div>
+
 		</div>
 		<?php
 		return ob_get_clean();

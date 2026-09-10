@@ -381,7 +381,19 @@
 		var currentSearchQuery = '';
 		var selectedCategories = [];
 
-		function loadStores() {
+		// The country directory (see renderDirectory() below) always lists
+		// every distributor regardless of the sidebar's search/category
+		// filters, so it's rendered once from the first (unfiltered) load
+		// and never rebuilt on later, filtered ones.
+		var directoryRendered = false;
+
+		/**
+		 * @param {Function} [onDone] Called after this load's markers/list are
+		 * in place — used by the directory's "Go to Location" (see below) to
+		 * clear filters and wait for the full marker set to come back before
+		 * jumping to a location that the previous, filtered view had hidden.
+		 */
+		function loadStores( onDone ) {
 			var params = [];
 			if ( currentSearchQuery ) {
 				params.push( 'search=' + encodeURIComponent( currentSearchQuery ) );
@@ -399,6 +411,13 @@
 					currentStores = stores;
 					renderList( stores );
 					renderMarkers( stores );
+					if ( ! directoryRendered ) {
+						renderDirectory( stores );
+						directoryRendered = true;
+					}
+					if ( typeof onDone === 'function' ) {
+						onDone();
+					}
 				} )
 				.catch( function () {
 					storeListEl.innerHTML = '<li class="vonarx-locator__empty">Unable to load locations right now.</li>';
@@ -699,6 +718,308 @@
 				var expanded = sidebarToggle.getAttribute( 'aria-expanded' ) === 'true';
 				sidebarToggle.setAttribute( 'aria-expanded', expanded ? 'false' : 'true' );
 				sidebar.classList.toggle( 'is-collapsed', expanded );
+			} );
+		}
+
+		/**
+		 * "Distributors by Country" directory, above the map/sidebar: a
+		 * complete, unfiltered index — continent tabs, each with its
+		 * countries as sub-tabs (one open at a time at both levels), each
+		 * country listing its distributors in a 4-column grid with a logo,
+		 * a Website-or-Email button, and a "Go to Location" shortcut that
+		 * scrolls down to the map and opens that marker there.
+		 */
+		var directoryTabsEl = document.getElementById( 'vonarx-directory-tabs' );
+		var directoryPanelsEl = document.getElementById( 'vonarx-directory-panels' );
+		var directoryStores = [];
+
+		/**
+		 * Country name (as stored in _vonarx_country — free text, not a
+		 * controlled taxonomy) -> continent, lowercased/trimmed for lookup.
+		 * Covers common alternate names/spellings so real-world data entry
+		 * variance doesn't dump things into "Other". Anything not listed
+		 * here still gets its own "Other" continent tab rather than being
+		 * dropped, so it stays visible even if not classified correctly.
+		 */
+		var CONTINENT_BY_COUNTRY = {
+			// Africa
+			algeria: 'Africa', angola: 'Africa', benin: 'Africa', botswana: 'Africa',
+			'burkina faso': 'Africa', burundi: 'Africa', 'cabo verde': 'Africa', 'cape verde': 'Africa',
+			cameroon: 'Africa', 'central african republic': 'Africa', chad: 'Africa', comoros: 'Africa',
+			congo: 'Africa', 'congo (drc)': 'Africa', 'democratic republic of the congo': 'Africa',
+			'congo (republic)': 'Africa', 'republic of the congo': 'Africa', djibouti: 'Africa',
+			egypt: 'Africa', 'equatorial guinea': 'Africa', eritrea: 'Africa', eswatini: 'Africa',
+			swaziland: 'Africa', ethiopia: 'Africa', gabon: 'Africa', gambia: 'Africa', ghana: 'Africa',
+			guinea: 'Africa', 'guinea-bissau': 'Africa', 'ivory coast': 'Africa', "cote d'ivoire": 'Africa',
+			"côte d'ivoire": 'Africa', kenya: 'Africa', lesotho: 'Africa', liberia: 'Africa', libya: 'Africa',
+			madagascar: 'Africa', malawi: 'Africa', mali: 'Africa', mauritania: 'Africa', mauritius: 'Africa',
+			morocco: 'Africa', mozambique: 'Africa', namibia: 'Africa', niger: 'Africa', nigeria: 'Africa',
+			rwanda: 'Africa', 'sao tome and principe': 'Africa', senegal: 'Africa', seychelles: 'Africa',
+			'sierra leone': 'Africa', somalia: 'Africa', 'south africa': 'Africa', 'south sudan': 'Africa',
+			sudan: 'Africa', tanzania: 'Africa', togo: 'Africa', tunisia: 'Africa', uganda: 'Africa',
+			zambia: 'Africa', zimbabwe: 'Africa', 'western sahara': 'Africa',
+
+			// Asia
+			afghanistan: 'Asia', armenia: 'Asia', azerbaijan: 'Asia', bahrain: 'Asia', bangladesh: 'Asia',
+			bhutan: 'Asia', brunei: 'Asia', cambodia: 'Asia', china: 'Asia', georgia: 'Asia',
+			'hong kong': 'Asia', india: 'Asia', indonesia: 'Asia', iran: 'Asia', iraq: 'Asia',
+			israel: 'Asia', japan: 'Asia', jordan: 'Asia', kazakhstan: 'Asia', kuwait: 'Asia',
+			kyrgyzstan: 'Asia', laos: 'Asia', lebanon: 'Asia', macau: 'Asia', malaysia: 'Asia',
+			maldives: 'Asia', mongolia: 'Asia', myanmar: 'Asia', burma: 'Asia', nepal: 'Asia',
+			'north korea': 'Asia', oman: 'Asia', pakistan: 'Asia', palestine: 'Asia', philippines: 'Asia',
+			qatar: 'Asia', 'saudi arabia': 'Asia', singapore: 'Asia', 'south korea': 'Asia',
+			'korea (south)': 'Asia', 'korea, south': 'Asia', 'sri lanka': 'Asia', syria: 'Asia',
+			taiwan: 'Asia', tajikistan: 'Asia', thailand: 'Asia', 'timor-leste': 'Asia', 'east timor': 'Asia',
+			turkey: 'Asia', turkmenistan: 'Asia', 'united arab emirates': 'Asia', uae: 'Asia',
+			uzbekistan: 'Asia', vietnam: 'Asia', yemen: 'Asia',
+
+			// Europe
+			albania: 'Europe', andorra: 'Europe', austria: 'Europe', belarus: 'Europe', belgium: 'Europe',
+			'bosnia and herzegovina': 'Europe', bulgaria: 'Europe', croatia: 'Europe', cyprus: 'Europe',
+			'czech republic': 'Europe', czechia: 'Europe', denmark: 'Europe', estonia: 'Europe',
+			finland: 'Europe', france: 'Europe', germany: 'Europe', greece: 'Europe', hungary: 'Europe',
+			iceland: 'Europe', ireland: 'Europe', italy: 'Europe', kosovo: 'Europe', latvia: 'Europe',
+			liechtenstein: 'Europe', lithuania: 'Europe', luxembourg: 'Europe', malta: 'Europe',
+			moldova: 'Europe', monaco: 'Europe', montenegro: 'Europe', netherlands: 'Europe', holland: 'Europe',
+			'north macedonia': 'Europe', macedonia: 'Europe', norway: 'Europe', poland: 'Europe',
+			portugal: 'Europe', romania: 'Europe', russia: 'Europe', 'russian federation': 'Europe',
+			'san marino': 'Europe', serbia: 'Europe', slovakia: 'Europe', 'slovak republic': 'Europe',
+			'slovakia (slovak republic)': 'Europe', slovenia: 'Europe', spain: 'Europe', sweden: 'Europe',
+			switzerland: 'Europe', ukraine: 'Europe', 'united kingdom': 'Europe', uk: 'Europe',
+			'great britain': 'Europe', england: 'Europe', scotland: 'Europe', wales: 'Europe',
+			'northern ireland': 'Europe', 'vatican city': 'Europe', 'holy see': 'Europe',
+
+			// North America
+			'antigua and barbuda': 'North America', bahamas: 'North America', barbados: 'North America',
+			belize: 'North America', canada: 'North America', 'costa rica': 'North America',
+			cuba: 'North America', dominica: 'North America', 'dominican republic': 'North America',
+			'el salvador': 'North America', grenada: 'North America', guatemala: 'North America',
+			haiti: 'North America', honduras: 'North America', jamaica: 'North America', mexico: 'North America',
+			nicaragua: 'North America', panama: 'North America', 'saint kitts and nevis': 'North America',
+			'saint lucia': 'North America', 'saint vincent and the grenadines': 'North America',
+			'trinidad and tobago': 'North America', 'united states': 'North America', usa: 'North America',
+			'united states of america': 'North America', us: 'North America',
+
+			// South America
+			argentina: 'South America', bolivia: 'South America', brazil: 'South America',
+			chile: 'South America', colombia: 'South America', ecuador: 'South America',
+			guyana: 'South America', paraguay: 'South America', peru: 'South America',
+			suriname: 'South America', uruguay: 'South America', venezuela: 'South America',
+
+			// Oceania
+			australia: 'Oceania', fiji: 'Oceania', kiribati: 'Oceania', 'marshall islands': 'Oceania',
+			micronesia: 'Oceania', nauru: 'Oceania', 'new zealand': 'Oceania', palau: 'Oceania',
+			'papua new guinea': 'Oceania', samoa: 'Oceania', 'solomon islands': 'Oceania',
+			tonga: 'Oceania', tuvalu: 'Oceania', vanuatu: 'Oceania',
+		};
+
+		function continentForCountry( country ) {
+			var key = String( country || '' ).trim().toLowerCase();
+			return CONTINENT_BY_COUNTRY[ key ] || 'Other';
+		}
+
+		function directoryCardHtml( store ) {
+			var primaryAction = '';
+			if ( store.website ) {
+				primaryAction = '<a class="vonarx-directory__btn" href="' + escapeHtml( store.website ) +
+					'" target="_blank" rel="noopener noreferrer">Website</a>';
+			} else if ( store.email ) {
+				primaryAction = '<a class="vonarx-directory__btn" href="mailto:' + escapeHtml( store.email ) + '">Email</a>';
+			}
+
+			var gotoAction = '<button type="button" class="vonarx-directory__btn vonarx-directory__btn--goto" data-id="' +
+				escapeHtml( String( store.id ) ) + '">Go to Location</button>';
+
+			return '<div class="vonarx-directory__card">' +
+				logoImgHtml( store, 'vonarx-directory__logo' ) +
+				'<h4 class="vonarx-directory__name">' + escapeHtml( store.name ) + '</h4>' +
+				'<div class="vonarx-directory__actions">' + primaryAction + gotoAction + '</div>' +
+				'</div>';
+		}
+
+		/**
+		 * Jumps to a location from the directory. If it's not currently on
+		 * the map (the sidebar's search/category filters have hidden it —
+		 * the directory itself ignores those filters and always lists
+		 * everything), the filters are cleared and results reloaded first,
+		 * so this always works regardless of the sidebar's current state.
+		 */
+		function goToLocationOnMap( storeId ) {
+			var store = directoryStores.filter( function ( s ) {
+				return String( s.id ) === String( storeId );
+			} )[ 0 ];
+			if ( ! store ) {
+				return;
+			}
+
+			function jumpToMarker() {
+				var mapWrap = document.querySelector( '.vonarx-locator__map-wrap' );
+				if ( mapWrap ) {
+					mapWrap.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+				}
+				var marker = markers[ storeId ];
+				if ( marker ) {
+					handleStoreSelected( store, marker, false );
+				}
+			}
+
+			if ( markers[ storeId ] ) {
+				jumpToMarker();
+				return;
+			}
+
+			currentSearchQuery = '';
+			selectedCategories = [];
+			if ( searchInput ) {
+				searchInput.value = '';
+			}
+			syncCategoryFilterUi();
+			loadStores( jumpToMarker );
+		}
+
+		function renderDirectory( stores ) {
+			directoryStores = stores;
+			if ( ! directoryTabsEl || ! directoryPanelsEl ) {
+				return;
+			}
+
+			directoryTabsEl.innerHTML = '';
+			directoryPanelsEl.innerHTML = '';
+
+			// Group by continent, then by country within it. Stores already
+			// arrive sorted by country from the REST API, so each country's
+			// own bucket stays in that order; continents are then sorted
+			// alphabetically (with "Other" — unrecognized country names —
+			// pushed last) since nothing about continents comes pre-sorted.
+			var continents = {};
+			var continentOrder = [];
+			stores.forEach( function ( store ) {
+				var country = store.country || 'Other';
+				var continent = continentForCountry( country );
+				if ( ! continents[ continent ] ) {
+					continents[ continent ] = { order: [], countries: {} };
+					continentOrder.push( continent );
+				}
+				var bucket = continents[ continent ];
+				if ( ! bucket.countries[ country ] ) {
+					bucket.countries[ country ] = [];
+					bucket.order.push( country );
+				}
+				bucket.countries[ country ].push( store );
+			} );
+			continentOrder.sort( function ( a, b ) {
+				if ( a === 'Other' ) {
+					return 1;
+				}
+				if ( b === 'Other' ) {
+					return -1;
+				}
+				return a.localeCompare( b );
+			} );
+
+			function selectContinentTab( index ) {
+				directoryTabsEl.querySelectorAll( '.vonarx-directory__tab' ).forEach( function ( tab, i ) {
+					tab.classList.toggle( 'is-active', i === index );
+					tab.setAttribute( 'aria-selected', i === index ? 'true' : 'false' );
+				} );
+				directoryPanelsEl.querySelectorAll( '.vonarx-directory__panel' ).forEach( function ( panel, i ) {
+					panel.classList.toggle( 'is-active', i === index );
+					panel.hidden = i !== index;
+				} );
+			}
+
+			continentOrder.forEach( function ( continent, continentIndex ) {
+				var tabId = 'vonarx-directory-tab-' + continentIndex;
+				var panelId = 'vonarx-directory-panel-' + continentIndex;
+
+				var tabBtn = document.createElement( 'button' );
+				tabBtn.type = 'button';
+				tabBtn.className = 'vonarx-directory__tab';
+				tabBtn.id = tabId;
+				tabBtn.setAttribute( 'role', 'tab' );
+				tabBtn.setAttribute( 'aria-controls', panelId );
+				tabBtn.textContent = continent;
+				tabBtn.addEventListener( 'click', function () {
+					selectContinentTab( continentIndex );
+				} );
+				directoryTabsEl.appendChild( tabBtn );
+
+				var panel = document.createElement( 'div' );
+				panel.className = 'vonarx-directory__panel';
+				panel.id = panelId;
+				panel.setAttribute( 'role', 'tabpanel' );
+				panel.setAttribute( 'aria-labelledby', tabId );
+
+				var subTabsEl = document.createElement( 'div' );
+				subTabsEl.className = 'vonarx-directory__subtabs';
+				subTabsEl.setAttribute( 'role', 'tablist' );
+				subTabsEl.setAttribute( 'aria-label', 'Countries in ' + continent );
+
+				var subPanelsEl = document.createElement( 'div' );
+				subPanelsEl.className = 'vonarx-directory__subpanels';
+
+				function selectCountryTab( index ) {
+					subTabsEl.querySelectorAll( '.vonarx-directory__subtab' ).forEach( function ( tab, i ) {
+						tab.classList.toggle( 'is-active', i === index );
+						tab.setAttribute( 'aria-selected', i === index ? 'true' : 'false' );
+					} );
+					subPanelsEl.querySelectorAll( '.vonarx-directory__subpanel' ).forEach( function ( subPanel, i ) {
+						subPanel.classList.toggle( 'is-active', i === index );
+						subPanel.hidden = i !== index;
+					} );
+				}
+
+				continents[ continent ].order.forEach( function ( country, countryIndex ) {
+					var subTabId = 'vonarx-directory-subtab-' + continentIndex + '-' + countryIndex;
+					var subPanelId = 'vonarx-directory-subpanel-' + continentIndex + '-' + countryIndex;
+
+					var subTab = document.createElement( 'button' );
+					subTab.type = 'button';
+					subTab.className = 'vonarx-directory__subtab';
+					subTab.id = subTabId;
+					subTab.setAttribute( 'role', 'tab' );
+					subTab.setAttribute( 'aria-controls', subPanelId );
+					subTab.textContent = country;
+					subTab.addEventListener( 'click', function () {
+						selectCountryTab( countryIndex );
+					} );
+					subTabsEl.appendChild( subTab );
+
+					var subPanel = document.createElement( 'div' );
+					subPanel.className = 'vonarx-directory__subpanel';
+					subPanel.id = subPanelId;
+					subPanel.setAttribute( 'role', 'tabpanel' );
+					subPanel.setAttribute( 'aria-labelledby', subTabId );
+
+					var heading = document.createElement( 'h3' );
+					heading.className = 'vonarx-directory__panel-heading';
+					heading.textContent = country;
+					subPanel.appendChild( heading );
+
+					var grid = document.createElement( 'div' );
+					grid.className = 'vonarx-directory__grid';
+					grid.innerHTML = continents[ continent ].countries[ country ].map( directoryCardHtml ).join( '' );
+					subPanel.appendChild( grid );
+
+					subPanelsEl.appendChild( subPanel );
+				} );
+
+				panel.appendChild( subTabsEl );
+				panel.appendChild( subPanelsEl );
+				directoryPanelsEl.appendChild( panel );
+
+				selectCountryTab( 0 );
+			} );
+
+			selectContinentTab( 0 );
+		}
+
+		if ( directoryPanelsEl ) {
+			directoryPanelsEl.addEventListener( 'click', function ( e ) {
+				var btn = e.target.closest( '.vonarx-directory__btn--goto' );
+				if ( btn ) {
+					goToLocationOnMap( btn.dataset.id );
+				}
 			} );
 		}
 

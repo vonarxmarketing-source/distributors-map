@@ -11,7 +11,13 @@
 	--bp-mobile: 480px;
 }
 
-.vonarx-locator {
+/* Custom properties live on the outer wrap (not .vonarx-locator itself) so
+   they're inherited by both .vonarx-locator (the map/sidebar widget) and
+   .vonarx-locator-directory (the country directory above it) from one
+   shared source — see Vonarx_Locator_Shortcode::enqueue_style_overrides(),
+   which targets this same wrap selector with the admin's color/size
+   overrides. */
+.vonarx-locator-wrap {
 	/* Color palette (vonarx.com) */
 	--color-primary: #1c2b4a;
 	--color-accent: #94acff;
@@ -42,6 +48,12 @@
 	--font-weight-semibold: 600;
 	--font-weight-bold: 700;
 
+	display: block;
+	font-weight: var(--font-weight-regular);
+	line-height: 1.5;
+}
+
+.vonarx-locator {
 	display: flex;
 	flex-direction: column;
 	height: 700px;
@@ -54,13 +66,13 @@
 	border: 1px solid var(--color-border);
 }
 
-.vonarx-locator *,
-.vonarx-locator *::before,
-.vonarx-locator *::after {
+.vonarx-locator-wrap *,
+.vonarx-locator-wrap *::before,
+.vonarx-locator-wrap *::after {
 	box-sizing: border-box;
 }
 
-.vonarx-locator button {
+.vonarx-locator-wrap button {
 	font-family: inherit;
 }
 
@@ -74,6 +86,203 @@
 
 .vonarx-locator .leaflet-control-attribution {
 	font-size: 5pt;
+}
+
+/* ==========================================================================
+   Distributor directory: country tabs + a 4-column grid, above the map
+   ========================================================================== */
+
+.vonarx-directory {
+	margin-bottom: 20px;
+	font-size: var(--font-size-base);
+	color: var(--color-text);
+}
+
+.vonarx-directory__heading {
+	margin: 0 0 12px;
+	font-size: var(--font-size-base);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-primary);
+}
+
+/* Continent tabs as a left-hand nav sidebar, with the active continent's
+   content (country sub-tabs + grid) filling the rest of the width. Below
+   1024px this reverts to a horizontal, scrollable tab row instead — see
+   the override inside "@media (max-width: 1023px)" further down. */
+.vonarx-directory__body {
+	display: flex;
+	align-items: stretch;
+	border: 1px solid var(--color-border);
+	background: var(--color-white);
+}
+
+.vonarx-directory__tabs {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 200px;
+	border-right: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.vonarx-directory__tab {
+	padding: 12px 16px;
+	background: none;
+	border: none;
+	border-left: 3px solid transparent;
+	text-align: left;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+}
+
+.vonarx-directory__tab:hover {
+	color: var(--color-primary);
+	background: var(--color-accent-light);
+}
+
+.vonarx-directory__tab.is-active {
+	color: var(--color-primary);
+	background: var(--color-white);
+	border-left-color: var(--color-primary);
+	font-weight: var(--font-weight-semibold);
+}
+
+.vonarx-directory__panels {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.vonarx-directory__panel {
+	padding: 20px;
+}
+
+/* Country sub-tabs, nested inside a continent's panel — pill-style rather
+   than the continent tabs' underline style, so the two tab levels read as
+   visually distinct at a glance. */
+.vonarx-directory__subtabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding-bottom: 16px;
+	margin-bottom: 16px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.vonarx-directory__subtab {
+	flex: 0 0 auto;
+	padding: 6px 14px;
+	background: var(--color-surface);
+	border: none;
+	border-radius: 999px;
+	color: var(--color-text-muted);
+	font-size: var(--font-size-chip);
+	font-weight: var(--font-weight-medium);
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.vonarx-directory__subtab:hover {
+	background: var(--color-accent-light);
+	color: var(--color-primary);
+}
+
+.vonarx-directory__subtab.is-active {
+	background: var(--color-primary);
+	color: var(--color-white);
+}
+
+/* Hidden — the active country sub-tab already names the selected country,
+   so this heading (still rendered in the DOM, just not shown) would only
+   repeat that same label. */
+.vonarx-directory__panel-heading {
+	display: none;
+}
+
+.vonarx-directory__grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 0 20px;
+}
+
+.vonarx-directory__card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 16px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+/* First row's cards sit flush under the panel's own padding instead of
+   doubling up with a divider line above them. */
+.vonarx-directory__grid > .vonarx-directory__card:nth-child(-n+4) {
+	padding-top: 0;
+	border-top: none;
+}
+
+/* Vertical divider between companies sharing a row (every column but the
+   first) — sits in the middle of the grid's own 20px column gap, since it's
+   20px in from the previous card's edge and another 20px of padding before
+   this card's own content starts. */
+.vonarx-directory__grid > .vonarx-directory__card:not(:nth-child(4n+1)) {
+	padding-left: 20px;
+	border-left: 1px solid var(--color-border);
+}
+
+.vonarx-directory__logo {
+	width: 128px;
+	height: 128px;
+	object-fit: contain;
+}
+
+.vonarx-directory__name {
+	margin: 0;
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-semibold);
+	color: var(--color-text);
+}
+
+.vonarx-directory__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: auto;
+}
+
+.vonarx-directory__btn {
+	display: inline-block;
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-family: inherit;
+	font-size: var(--font-size-popup-btn);
+	font-weight: var(--font-weight-medium);
+	text-decoration: none;
+	cursor: pointer;
+}
+
+/* Website/Email: outlined secondary action. */
+.vonarx-directory__btn {
+	background: none;
+	border: 1px solid var(--color-primary);
+	color: var(--color-primary);
+}
+
+.vonarx-directory__btn:hover {
+	background: var(--color-accent-light);
+}
+
+/* "Go to Location": solid primary action — the headline feature of this
+   whole section, so it's the visually heavier of the two buttons. */
+.vonarx-directory__btn--goto {
+	background: var(--color-popup-btn-bg);
+	border-color: var(--color-popup-btn-bg);
+	color: var(--color-popup-btn-text);
+}
+
+.vonarx-directory__btn--goto:hover {
+	background: var(--color-popup-btn-bg-hover);
+	color: var(--color-popup-btn-text);
 }
 
 /* ==========================================================================
@@ -927,6 +1136,64 @@ a.vonarx-locator__contact-value:hover {
 	.vonarx-locator__category-dropdown {
 		display: block;
 	}
+
+	/* Continent sidebar reverts to a horizontal, scrollable tab row above
+	   the content — a left-hand nav column doesn't leave enough room for
+	   the content beside it on a narrower screen. */
+	.vonarx-directory__body {
+		flex-direction: column;
+	}
+
+	.vonarx-directory__tabs {
+		flex-direction: row;
+		flex: 0 0 auto;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		border-right: none;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.vonarx-directory__tab {
+		flex: 0 0 auto;
+		border-left: none;
+		border-bottom: 2px solid transparent;
+		white-space: nowrap;
+	}
+
+	.vonarx-directory__tab.is-active {
+		background: none;
+		border-left-color: transparent;
+		border-bottom-color: var(--color-primary);
+	}
+
+	.vonarx-directory__grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.vonarx-directory__grid > .vonarx-directory__card {
+		padding-top: 16px;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.vonarx-directory__grid > .vonarx-directory__card:nth-child(-n+2) {
+		padding-top: 0;
+		border-top: none;
+	}
+
+	/* Restate the vertical divider for 2 columns instead of 4 — the base
+	   ":not(:nth-child(4n+1))" rule doesn't line up once each row only has
+	   2 cards. ":nth-child(n)" (not the bare class) matches every card at
+	   that same rule's specificity, so this reset actually overrides it
+	   here instead of losing to it despite coming later in the source. */
+	.vonarx-directory__grid > .vonarx-directory__card:nth-child(n) {
+		padding-left: 0;
+		border-left: none;
+	}
+
+	.vonarx-directory__grid > .vonarx-directory__card:nth-child(2n) {
+		padding-left: 20px;
+		border-left: 1px solid var(--color-border);
+	}
 }
 
 @media (max-width: 480px) {
@@ -951,6 +1218,31 @@ a.vonarx-locator__contact-value:hover {
 	.vonarx-locator__logo-box {
 		width: 100%;
 		max-width: 250px;
+	}
+
+	.vonarx-directory__grid {
+		grid-template-columns: 1fr;
+	}
+
+	.vonarx-directory__grid > .vonarx-directory__card:nth-child(-n+2) {
+		padding-top: 16px;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.vonarx-directory__grid > .vonarx-directory__card:first-child {
+		padding-top: 0;
+		border-top: none;
+	}
+
+	/* Single column — nothing beside a card to divide from. ":nth-child(n)"
+	   (rather than the bare class) matches every card at the same
+	   specificity as the ">=1024px" ":not(:nth-child(4n+1))" rule and the
+	   tablet ":nth-child(2n)" rule above, so this actually overrides both
+	   here instead of losing to them on specificity despite coming later
+	   in the source. */
+	.vonarx-directory__grid > .vonarx-directory__card:nth-child(n) {
+		padding-left: 0;
+		border-left: none;
 	}
 }
 
@@ -999,6 +1291,7 @@ a.vonarx-locator__contact-value:hover {
 
 /* Desktop (>=1200px): capped, centered width, plus full sidebar spacing/type scale. */
 @media (min-width: 1200px) {
+	.vonarx-locator-wrap,
 	.vonarx-locator {
 		max-width: 1200px;
 		margin: 0 auto;
