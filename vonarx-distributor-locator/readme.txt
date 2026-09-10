@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.7.1 =
+* Restyled the continent filter tabs as plain underlined links instead of filled pill buttons, so they read as visually distinct from the category chips next to them.
 
 = 1.7.0 =
 * Replaced the "Distributors by Country" section above the map with continent filter tabs (All, Europe, North America, Asia, Australia) built into the same top bar as the search box and category chips. Picking one narrows the sidebar list and map to that continent (auto-fitting the map to it), same as the existing search/category filters — the map/sidebar widget itself is otherwise unchanged.

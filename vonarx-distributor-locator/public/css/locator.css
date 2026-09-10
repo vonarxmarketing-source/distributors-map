@@ -94,12 +94,43 @@
 /* Continent filter — sits above the search/category row, in the same top
    bar. Single-select (unlike the category chips, which allow several at
    once): picking one narrows the sidebar list/map to that continent;
-   "All" (the default) clears it. Reuses .vonarx-chip's pill styling for
-   visual consistency with the category chips below it. */
+   "All" (the default) clears it. Styled as plain underlined links rather
+   than the category chips' filled pill style below it, so the two filter
+   types read as visually distinct. */
 .vonarx-locator__continent-tabs {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: 18px;
+}
+
+.vonarx-continent-chip {
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-white);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	opacity: 0.7;
+	cursor: pointer;
+	transition: opacity 0.15s, color 0.15s;
+}
+
+.vonarx-continent-chip:hover {
+	opacity: 1;
+}
+
+.vonarx-continent-chip:focus-visible {
+	outline: none;
+	opacity: 1;
+	box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+.vonarx-continent-chip[aria-pressed="true"] {
+	color: var(--color-accent);
+	font-weight: var(--font-weight-semibold);
+	opacity: 1;
 }
 
 .vonarx-locator__topbar-row {

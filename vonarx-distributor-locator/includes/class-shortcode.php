@@ -144,9 +144,9 @@ class Vonarx_Locator_Shortcode {
 
 			<div class="vonarx-locator__topbar">
 				<div class="vonarx-locator__continent-tabs" id="vonarx-continent-tabs" role="group" aria-label="<?php esc_attr_e( 'Filter by continent', 'vonarx-distributor-locator' ); ?>">
-					<button type="button" class="vonarx-chip vonarx-continent-chip" data-continent="" aria-pressed="true"><?php esc_html_e( 'All', 'vonarx-distributor-locator' ); ?></button>
+					<button type="button" class="vonarx-continent-chip" data-continent="" aria-pressed="true"><?php esc_html_e( 'All', 'vonarx-distributor-locator' ); ?></button>
 					<?php foreach ( array( 'Europe', 'North America', 'Asia', 'Australia' ) as $continent ) : ?>
-						<button type="button" class="vonarx-chip vonarx-continent-chip" data-continent="<?php echo esc_attr( $continent ); ?>" aria-pressed="false"><?php echo esc_html( $continent ); ?></button>
+						<button type="button" class="vonarx-continent-chip" data-continent="<?php echo esc_attr( $continent ); ?>" aria-pressed="false"><?php echo esc_html( $continent ); ?></button>
 					<?php endforeach; ?>
 				</div>
 
