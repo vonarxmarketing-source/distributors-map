@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.3.2
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.4.0 =
+* Added Distributor Locations → Import / Export: download all locations as an .xlsx spreadsheet (Company, Product Groups, Address, City, State/Region, ZIP, Country, Geolocation, Phone, Email, Website), edit it, and re-upload to bulk-update existing locations or add new ones.
+* Removed the bundled sample distributor data (data/seed-locations.json and data/logos/) and the one-time importer that seeded it on activation. New installs now start with zero locations instead of the demo set; existing sites are unaffected since that importer only ever ran once, on first activation.
 
 = 1.3.2 =
 * Mobile/tablet-portrait: tapping a map pin no longer auto-scrolls to the sidebar card. Its popup now has a "Go to Contacts" button next to "View Routes" for jumping there on demand instead.

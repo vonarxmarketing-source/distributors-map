@@ -2,7 +2,7 @@
 /**
  * Plugin Name: VonArx Distributor Locator
  * Description: Manage and display VonArx distributor locations on an interactive map via the [vonarx_locator] shortcode.
- * Version: 1.3.2
+ * Version: 1.4.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: VonArx Distributors
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-define( 'VONARX_LOCATOR_VERSION', '1.3.2' );
+define( 'VONARX_LOCATOR_VERSION', '1.4.0' );
 define( 'VONARX_LOCATOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'VONARX_LOCATOR_URL', plugin_dir_url( __FILE__ ) );
 
@@ -27,7 +27,8 @@ require_once VONARX_LOCATOR_PATH . 'includes/class-rest-api.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-settings.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-shortcode.php';
 require_once VONARX_LOCATOR_PATH . 'includes/class-page-template.php';
-require_once VONARX_LOCATOR_PATH . 'includes/class-sample-data.php';
+require_once VONARX_LOCATOR_PATH . 'includes/class-xlsx.php';
+require_once VONARX_LOCATOR_PATH . 'includes/class-import-export.php';
 
 /**
  * Checks the plugin's GitHub repo for updates instead of WordPress.org,
@@ -61,6 +62,7 @@ function vonarx_locator_init() {
 	new Vonarx_Locator_Post_Type();
 	new Vonarx_Locator_REST_API();
 	new Vonarx_Locator_Settings();
+	new Vonarx_Locator_Import_Export();
 	new Vonarx_Locator_Shortcode();
 	new Vonarx_Locator_Page_Template();
 }
@@ -89,8 +91,6 @@ function vonarx_locator_activate() {
 			wp_insert_term( $label, Vonarx_Locator_Post_Type::TAXONOMY, array( 'slug' => $slug ) );
 		}
 	}
-
-	Vonarx_Locator_Sample_Data::maybe_import();
 
 	flush_rewrite_rules();
 }
