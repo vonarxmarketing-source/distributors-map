@@ -717,8 +717,8 @@
 		 * stored in _vonarx_country — free text, not a controlled taxonomy)
 		 * -> continent, lowercased/trimmed for lookup. Covers common
 		 * alternate names/spellings so real-world data entry variance
-		 * doesn't dump things into "Other". Only Europe/North America/
-		 * Asia/Australia have their own filter tab (see the PHP-rendered
+		 * doesn't dump things into "Other". Only Europe/North America/Asia/
+		 * Australia/Oceania have their own filter tab (see the PHP-rendered
 		 * buttons in #vonarx-continent-tabs); anything else — including
 		 * "Other" — is only reachable via the "All" tab.
 		 */
@@ -787,12 +787,12 @@
 			guyana: 'South America', paraguay: 'South America', peru: 'South America',
 			suriname: 'South America', uruguay: 'South America', venezuela: 'South America',
 
-			// Oceania — labeled "Australia" rather than "Oceania" to match the
-			// continent filter tabs, since Australia is the only market here today.
-			australia: 'Australia', fiji: 'Australia', kiribati: 'Australia', 'marshall islands': 'Australia',
-			micronesia: 'Australia', nauru: 'Australia', 'new zealand': 'Australia', palau: 'Australia',
-			'papua new guinea': 'Australia', samoa: 'Australia', 'solomon islands': 'Australia',
-			tonga: 'Australia', tuvalu: 'Australia', vanuatu: 'Australia',
+			// Australia gets its own tab, split out from the rest of Oceania.
+			australia: 'Australia',
+			fiji: 'Oceania', kiribati: 'Oceania', 'marshall islands': 'Oceania',
+			micronesia: 'Oceania', nauru: 'Oceania', 'new zealand': 'Oceania', palau: 'Oceania',
+			'papua new guinea': 'Oceania', samoa: 'Oceania', 'solomon islands': 'Oceania',
+			tonga: 'Oceania', tuvalu: 'Oceania', vanuatu: 'Oceania',
 		};
 
 		function continentForCountry( country ) {

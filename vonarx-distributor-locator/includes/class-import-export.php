@@ -163,6 +163,14 @@ class Vonarx_Locator_Import_Export {
 					<?php wp_nonce_field( 'vonarx_locator_import' ); ?>
 					<input type="hidden" name="action" value="vonarx_locator_import" />
 					<p><input type="file" name="vonarx_import_file" accept=".xlsx" required /></p>
+					<p>
+						<label>
+							<input type="checkbox" name="vonarx_replace_all" value="1" />
+							<?php esc_html_e( 'Replace all — move every existing location NOT in this file to the Trash.', 'vonarx-distributor-locator' ); ?>
+						</label>
+						<br />
+						<span class="description"><?php esc_html_e( 'Leave unchecked to only create/update the rows in this file (the safe default). Checking this makes the file the full source of truth: anything missing from it is trashed, not permanently deleted, so it can still be restored from Distributor Locations → Trash if this was a mistake.', 'vonarx-distributor-locator' ); ?></span>
+					</p>
 					<?php submit_button( __( 'Upload & Import', 'vonarx-distributor-locator' ), 'primary', 'submit', false ); ?>
 				</form>
 			</div>
@@ -333,9 +341,10 @@ class Vonarx_Locator_Import_Export {
 			@set_time_limit( 0 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		}
 
-		$created = 0;
-		$updated = 0;
-		$notes   = array();
+		$created       = 0;
+		$updated       = 0;
+		$notes         = array();
+		$processed_ids = array();
 
 		foreach ( $rows as $row_index => $row ) {
 			$line = $row_index + 2; // header is row 1, plus 1 to make it 1-based.
@@ -386,6 +395,8 @@ class Vonarx_Locator_Import_Export {
 				}
 				++$created;
 			}
+
+			$processed_ids[] = $post_id;
 
 			$text_fields = array( 'address', 'city', 'state', 'zip', 'country', 'phone', 'email' );
 			foreach ( $text_fields as $field ) {
@@ -470,12 +481,37 @@ class Vonarx_Locator_Import_Export {
 			}
 		}
 
+		$trashed = 0;
+		if ( ! empty( $_POST['vonarx_replace_all'] ) ) {
+			$existing_ids = get_posts(
+				array(
+					'post_type'      => Vonarx_Locator_Post_Type::POST_TYPE,
+					'post_status'    => 'any',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+				)
+			);
+
+			foreach ( array_diff( $existing_ids, $processed_ids ) as $stale_id ) {
+				if ( wp_trash_post( $stale_id ) ) {
+					++$trashed;
+				}
+			}
+		}
+
 		$summary = sprintf(
 			/* translators: 1: number created, 2: number updated */
 			__( 'Import complete: %1$d location(s) created, %2$d updated.', 'vonarx-distributor-locator' ),
 			$created,
 			$updated
 		);
+		if ( $trashed ) {
+			$summary .= ' ' . sprintf(
+				/* translators: %d: number of locations moved to trash */
+				__( '%d location(s) not in this file were moved to the Trash.', 'vonarx-distributor-locator' ),
+				$trashed
+			);
+		}
 
 		$message = '<p>' . esc_html( $summary ) . '</p>';
 		if ( $notes ) {

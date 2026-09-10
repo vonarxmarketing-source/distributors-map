@@ -27,6 +27,7 @@
 	--color-popup-btn-bg-hover: #1c2b4a;
 	--color-item-action-bg: #3e55a5;
 	--color-item-action-bg-hover: #18253f;
+	--color-bright-blue: #2979ff;
 
 	/* Type scale. No --font-family here on purpose: the widget deliberately
 	   has no font-family of its own and always renders in the active
@@ -118,6 +119,7 @@
 }
 
 .vonarx-continent-chip:hover {
+	color: var(--color-bright-blue);
 	opacity: 1;
 }
 
@@ -128,7 +130,7 @@
 }
 
 .vonarx-continent-chip[aria-pressed="true"] {
-	color: var(--color-accent);
+	color: var(--color-bright-blue);
 	font-weight: var(--font-weight-semibold);
 	opacity: 1;
 }
