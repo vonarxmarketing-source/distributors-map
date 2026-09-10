@@ -363,12 +363,12 @@
 			} );
 
 			// Only auto-fit once the visitor has actually filtered results
-			// down (search or category chips/dropdown) — the default,
-			// unfiltered "all locations" view stays on the fixed Europe
-			// center/zoom set above instead of zooming out to fit every
-			// distributor worldwide, which is what made earlier zoom-cap
-			// tweaks here look like they had no effect.
-			var isFiltered = !! currentSearchQuery || selectedCategories.length > 0;
+			// down (search, category chips/dropdown, or the continent tabs)
+			// — the default, unfiltered "all locations" view stays on the
+			// fixed Europe center/zoom set above instead of zooming out to
+			// fit every distributor worldwide, which is what made earlier
+			// zoom-cap tweaks here look like they had no effect.
+			var isFiltered = !! currentSearchQuery || selectedCategories.length > 0 || !! selectedContinent;
 			if ( isFiltered && bounds.length ) {
 				// 18 is the tile layer's own maxZoom above — Leaflet can't
 				// zoom in past that regardless, so this cap is effectively
@@ -380,20 +380,9 @@
 		var currentStores = [];
 		var currentSearchQuery = '';
 		var selectedCategories = [];
+		var selectedContinent = '';
 
-		// The country directory (see renderDirectory() below) always lists
-		// every distributor regardless of the sidebar's search/category
-		// filters, so it's rendered once from the first (unfiltered) load
-		// and never rebuilt on later, filtered ones.
-		var directoryRendered = false;
-
-		/**
-		 * @param {Function} [onDone] Called after this load's markers/list are
-		 * in place — used by the directory's "Go to Location" (see below) to
-		 * clear filters and wait for the full marker set to come back before
-		 * jumping to a location that the previous, filtered view had hidden.
-		 */
-		function loadStores( onDone ) {
+		function loadStores() {
 			var params = [];
 			if ( currentSearchQuery ) {
 				params.push( 'search=' + encodeURIComponent( currentSearchQuery ) );
@@ -408,16 +397,18 @@
 					return res.json();
 				} )
 				.then( function ( stores ) {
-					currentStores = stores;
-					renderList( stores );
-					renderMarkers( stores );
-					if ( ! directoryRendered ) {
-						renderDirectory( stores );
-						directoryRendered = true;
-					}
-					if ( typeof onDone === 'function' ) {
-						onDone();
-					}
+					// Continent isn't a REST API param (it's derived client-side —
+					// see continentForCountry() below), so it's applied here as an
+					// extra filter on top of whatever the server already returned
+					// for the current search/category state.
+					var filtered = selectedContinent ?
+						stores.filter( function ( store ) {
+							return continentForCountry( store.country ) === selectedContinent;
+						} ) :
+						stores;
+					currentStores = filtered;
+					renderList( filtered );
+					renderMarkers( filtered );
 				} )
 				.catch( function () {
 					storeListEl.innerHTML = '<li class="vonarx-locator__empty">Unable to load locations right now.</li>';
@@ -722,24 +713,14 @@
 		}
 
 		/**
-		 * "Distributors by Country" directory, above the map/sidebar: a
-		 * complete, unfiltered index — continent tabs, each with its
-		 * countries as sub-tabs (one open at a time at both levels), each
-		 * country listing its distributors in a 4-column grid with a logo,
-		 * a Website-or-Email button, and a "Go to Location" shortcut that
-		 * scrolls down to the map and opens that marker there.
-		 */
-		var directoryTabsEl = document.getElementById( 'vonarx-directory-tabs' );
-		var directoryPanelsEl = document.getElementById( 'vonarx-directory-panels' );
-		var directoryStores = [];
-
-		/**
-		 * Country name (as stored in _vonarx_country — free text, not a
-		 * controlled taxonomy) -> continent, lowercased/trimmed for lookup.
-		 * Covers common alternate names/spellings so real-world data entry
-		 * variance doesn't dump things into "Other". Anything not listed
-		 * here still gets its own "Other" continent tab rather than being
-		 * dropped, so it stays visible even if not classified correctly.
+		 * Continent filter (top bar, above the search box): country name (as
+		 * stored in _vonarx_country — free text, not a controlled taxonomy)
+		 * -> continent, lowercased/trimmed for lookup. Covers common
+		 * alternate names/spellings so real-world data entry variance
+		 * doesn't dump things into "Other". Only Europe/North America/
+		 * Asia/Australia have their own filter tab (see the PHP-rendered
+		 * buttons in #vonarx-continent-tabs); anything else — including
+		 * "Other" — is only reachable via the "All" tab.
 		 */
 		var CONTINENT_BY_COUNTRY = {
 			// Africa
@@ -806,11 +787,12 @@
 			guyana: 'South America', paraguay: 'South America', peru: 'South America',
 			suriname: 'South America', uruguay: 'South America', venezuela: 'South America',
 
-			// Oceania
-			australia: 'Oceania', fiji: 'Oceania', kiribati: 'Oceania', 'marshall islands': 'Oceania',
-			micronesia: 'Oceania', nauru: 'Oceania', 'new zealand': 'Oceania', palau: 'Oceania',
-			'papua new guinea': 'Oceania', samoa: 'Oceania', 'solomon islands': 'Oceania',
-			tonga: 'Oceania', tuvalu: 'Oceania', vanuatu: 'Oceania',
+			// Oceania — labeled "Australia" rather than "Oceania" to match the
+			// continent filter tabs, since Australia is the only market here today.
+			australia: 'Australia', fiji: 'Australia', kiribati: 'Australia', 'marshall islands': 'Australia',
+			micronesia: 'Australia', nauru: 'Australia', 'new zealand': 'Australia', palau: 'Australia',
+			'papua new guinea': 'Australia', samoa: 'Australia', 'solomon islands': 'Australia',
+			tonga: 'Australia', tuvalu: 'Australia', vanuatu: 'Australia',
 		};
 
 		function continentForCountry( country ) {
@@ -818,208 +800,25 @@
 			return CONTINENT_BY_COUNTRY[ key ] || 'Other';
 		}
 
-		function directoryCardHtml( store ) {
-			var primaryAction = '';
-			if ( store.website ) {
-				primaryAction = '<a class="vonarx-directory__btn" href="' + escapeHtml( store.website ) +
-					'" target="_blank" rel="noopener noreferrer">Website</a>';
-			} else if ( store.email ) {
-				primaryAction = '<a class="vonarx-directory__btn" href="mailto:' + escapeHtml( store.email ) + '">Email</a>';
-			}
-
-			var gotoAction = '<button type="button" class="vonarx-directory__btn vonarx-directory__btn--goto" data-id="' +
-				escapeHtml( String( store.id ) ) + '">Go to Location</button>';
-
-			return '<div class="vonarx-directory__card">' +
-				logoImgHtml( store, 'vonarx-directory__logo' ) +
-				'<h4 class="vonarx-directory__name">' + escapeHtml( store.name ) + '</h4>' +
-				'<div class="vonarx-directory__actions">' + primaryAction + gotoAction + '</div>' +
-				'</div>';
-		}
-
 		/**
-		 * Jumps to a location from the directory. If it's not currently on
-		 * the map (the sidebar's search/category filters have hidden it —
-		 * the directory itself ignores those filters and always lists
-		 * everything), the filters are cleared and results reloaded first,
-		 * so this always works regardless of the sidebar's current state.
+		 * Continent filter tabs (top bar, above the search box): single-
+		 * select, unlike the category chips below them which allow several
+		 * at once. Picking one re-fetches (server-filtered by search/
+		 * category as usual) and then narrows that client-side by continent;
+		 * "All" (data-continent="") clears it.
 		 */
-		function goToLocationOnMap( storeId ) {
-			var store = directoryStores.filter( function ( s ) {
-				return String( s.id ) === String( storeId );
-			} )[ 0 ];
-			if ( ! store ) {
-				return;
-			}
-
-			function jumpToMarker() {
-				var mapWrap = document.querySelector( '.vonarx-locator__map-wrap' );
-				if ( mapWrap ) {
-					mapWrap.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+		var continentTabsEl = document.getElementById( 'vonarx-continent-tabs' );
+		if ( continentTabsEl ) {
+			continentTabsEl.addEventListener( 'click', function ( e ) {
+				var btn = e.target.closest( '.vonarx-continent-chip' );
+				if ( ! btn ) {
+					return;
 				}
-				var marker = markers[ storeId ];
-				if ( marker ) {
-					handleStoreSelected( store, marker, false );
-				}
-			}
-
-			if ( markers[ storeId ] ) {
-				jumpToMarker();
-				return;
-			}
-
-			currentSearchQuery = '';
-			selectedCategories = [];
-			if ( searchInput ) {
-				searchInput.value = '';
-			}
-			syncCategoryFilterUi();
-			loadStores( jumpToMarker );
-		}
-
-		function renderDirectory( stores ) {
-			directoryStores = stores;
-			if ( ! directoryTabsEl || ! directoryPanelsEl ) {
-				return;
-			}
-
-			directoryTabsEl.innerHTML = '';
-			directoryPanelsEl.innerHTML = '';
-
-			// Group by continent, then by country within it. Stores already
-			// arrive sorted by country from the REST API, so each country's
-			// own bucket stays in that order; continents are then sorted
-			// alphabetically (with "Other" — unrecognized country names —
-			// pushed last) since nothing about continents comes pre-sorted.
-			var continents = {};
-			var continentOrder = [];
-			stores.forEach( function ( store ) {
-				var country = store.country || 'Other';
-				var continent = continentForCountry( country );
-				if ( ! continents[ continent ] ) {
-					continents[ continent ] = { order: [], countries: {} };
-					continentOrder.push( continent );
-				}
-				var bucket = continents[ continent ];
-				if ( ! bucket.countries[ country ] ) {
-					bucket.countries[ country ] = [];
-					bucket.order.push( country );
-				}
-				bucket.countries[ country ].push( store );
-			} );
-			continentOrder.sort( function ( a, b ) {
-				if ( a === 'Other' ) {
-					return 1;
-				}
-				if ( b === 'Other' ) {
-					return -1;
-				}
-				return a.localeCompare( b );
-			} );
-
-			function selectContinentTab( index ) {
-				directoryTabsEl.querySelectorAll( '.vonarx-directory__tab' ).forEach( function ( tab, i ) {
-					tab.classList.toggle( 'is-active', i === index );
-					tab.setAttribute( 'aria-selected', i === index ? 'true' : 'false' );
+				continentTabsEl.querySelectorAll( '.vonarx-continent-chip' ).forEach( function ( chip ) {
+					chip.setAttribute( 'aria-pressed', chip === btn ? 'true' : 'false' );
 				} );
-				directoryPanelsEl.querySelectorAll( '.vonarx-directory__panel' ).forEach( function ( panel, i ) {
-					panel.classList.toggle( 'is-active', i === index );
-					panel.hidden = i !== index;
-				} );
-			}
-
-			continentOrder.forEach( function ( continent, continentIndex ) {
-				var tabId = 'vonarx-directory-tab-' + continentIndex;
-				var panelId = 'vonarx-directory-panel-' + continentIndex;
-
-				var tabBtn = document.createElement( 'button' );
-				tabBtn.type = 'button';
-				tabBtn.className = 'vonarx-directory__tab';
-				tabBtn.id = tabId;
-				tabBtn.setAttribute( 'role', 'tab' );
-				tabBtn.setAttribute( 'aria-controls', panelId );
-				tabBtn.textContent = continent;
-				tabBtn.addEventListener( 'click', function () {
-					selectContinentTab( continentIndex );
-				} );
-				directoryTabsEl.appendChild( tabBtn );
-
-				var panel = document.createElement( 'div' );
-				panel.className = 'vonarx-directory__panel';
-				panel.id = panelId;
-				panel.setAttribute( 'role', 'tabpanel' );
-				panel.setAttribute( 'aria-labelledby', tabId );
-
-				var subTabsEl = document.createElement( 'div' );
-				subTabsEl.className = 'vonarx-directory__subtabs';
-				subTabsEl.setAttribute( 'role', 'tablist' );
-				subTabsEl.setAttribute( 'aria-label', 'Countries in ' + continent );
-
-				var subPanelsEl = document.createElement( 'div' );
-				subPanelsEl.className = 'vonarx-directory__subpanels';
-
-				function selectCountryTab( index ) {
-					subTabsEl.querySelectorAll( '.vonarx-directory__subtab' ).forEach( function ( tab, i ) {
-						tab.classList.toggle( 'is-active', i === index );
-						tab.setAttribute( 'aria-selected', i === index ? 'true' : 'false' );
-					} );
-					subPanelsEl.querySelectorAll( '.vonarx-directory__subpanel' ).forEach( function ( subPanel, i ) {
-						subPanel.classList.toggle( 'is-active', i === index );
-						subPanel.hidden = i !== index;
-					} );
-				}
-
-				continents[ continent ].order.forEach( function ( country, countryIndex ) {
-					var subTabId = 'vonarx-directory-subtab-' + continentIndex + '-' + countryIndex;
-					var subPanelId = 'vonarx-directory-subpanel-' + continentIndex + '-' + countryIndex;
-
-					var subTab = document.createElement( 'button' );
-					subTab.type = 'button';
-					subTab.className = 'vonarx-directory__subtab';
-					subTab.id = subTabId;
-					subTab.setAttribute( 'role', 'tab' );
-					subTab.setAttribute( 'aria-controls', subPanelId );
-					subTab.textContent = country;
-					subTab.addEventListener( 'click', function () {
-						selectCountryTab( countryIndex );
-					} );
-					subTabsEl.appendChild( subTab );
-
-					var subPanel = document.createElement( 'div' );
-					subPanel.className = 'vonarx-directory__subpanel';
-					subPanel.id = subPanelId;
-					subPanel.setAttribute( 'role', 'tabpanel' );
-					subPanel.setAttribute( 'aria-labelledby', subTabId );
-
-					var heading = document.createElement( 'h3' );
-					heading.className = 'vonarx-directory__panel-heading';
-					heading.textContent = country;
-					subPanel.appendChild( heading );
-
-					var grid = document.createElement( 'div' );
-					grid.className = 'vonarx-directory__grid';
-					grid.innerHTML = continents[ continent ].countries[ country ].map( directoryCardHtml ).join( '' );
-					subPanel.appendChild( grid );
-
-					subPanelsEl.appendChild( subPanel );
-				} );
-
-				panel.appendChild( subTabsEl );
-				panel.appendChild( subPanelsEl );
-				directoryPanelsEl.appendChild( panel );
-
-				selectCountryTab( 0 );
-			} );
-
-			selectContinentTab( 0 );
-		}
-
-		if ( directoryPanelsEl ) {
-			directoryPanelsEl.addEventListener( 'click', function ( e ) {
-				var btn = e.target.closest( '.vonarx-directory__btn--goto' );
-				if ( btn ) {
-					goToLocationOnMap( btn.dataset.id );
-				}
+				selectedContinent = btn.dataset.continent || '';
+				loadStores();
 			} );
 		}
 

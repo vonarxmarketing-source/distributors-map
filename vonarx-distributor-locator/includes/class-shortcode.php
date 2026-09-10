@@ -68,7 +68,7 @@ class Vonarx_Locator_Shortcode {
 		}
 
 		if ( $declarations ) {
-			wp_add_inline_style( 'vonarx-locator', '.vonarx-locator-wrap { ' . implode( ' ', $declarations ) . ' }' );
+			wp_add_inline_style( 'vonarx-locator', '.vonarx-locator { ' . implode( ' ', $declarations ) . ' }' );
 		}
 	}
 
@@ -140,90 +140,89 @@ class Vonarx_Locator_Shortcode {
 
 		ob_start();
 		?>
-		<div class="vonarx-locator-wrap" id="vonarx-locator-wrap">
+		<div class="vonarx-locator" id="vonarx-locator">
 
-			<div class="vonarx-directory" id="vonarx-locator-directory">
-				<h2 class="vonarx-directory__heading"><?php esc_html_e( 'Distributors by Country', 'vonarx-distributor-locator' ); ?></h2>
-				<div class="vonarx-directory__body">
-					<div class="vonarx-directory__tabs" id="vonarx-directory-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Distributors by country', 'vonarx-distributor-locator' ); ?>"></div>
-					<div class="vonarx-directory__panels" id="vonarx-directory-panels"></div>
-				</div>
-			</div>
-
-			<div class="vonarx-locator" id="vonarx-locator">
-
-				<div class="vonarx-locator__topbar">
-				<div class="vonarx-locator__search-wrap">
-					<div class="vonarx-locator__search-row">
-						<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
-						<input
-							type="text"
-							id="vonarx-location-search"
-							class="vonarx-locator__search-input"
-							role="combobox"
-							aria-expanded="false"
-							aria-autocomplete="list"
-							aria-controls="vonarx-location-search-results"
-							autocomplete="off"
-							placeholder="<?php esc_attr_e( 'Search location...', 'vonarx-distributor-locator' ); ?>"
-						/>
-						<button
-							type="button"
-							id="vonarx-locate-btn"
-							class="vonarx-locator__locate-btn"
-							aria-label="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
-							title="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
-						>
-							<?php echo $this->icon( 'locate' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
-						</button>
-						<ul id="vonarx-location-search-results" class="vonarx-locator__search-results" role="listbox" hidden></ul>
-					</div>
-					<div id="vonarx-locate-status" class="vonarx-locator__locate-status" role="status" aria-live="polite" hidden></div>
+			<div class="vonarx-locator__topbar">
+				<div class="vonarx-locator__continent-tabs" id="vonarx-continent-tabs" role="group" aria-label="<?php esc_attr_e( 'Filter by continent', 'vonarx-distributor-locator' ); ?>">
+					<button type="button" class="vonarx-chip vonarx-continent-chip" data-continent="" aria-pressed="true"><?php esc_html_e( 'All', 'vonarx-distributor-locator' ); ?></button>
+					<?php foreach ( array( 'Europe', 'North America', 'Asia', 'Australia' ) as $continent ) : ?>
+						<button type="button" class="vonarx-chip vonarx-continent-chip" data-continent="<?php echo esc_attr( $continent ); ?>" aria-pressed="false"><?php echo esc_html( $continent ); ?></button>
+					<?php endforeach; ?>
 				</div>
 
-				<div class="vonarx-locator__chips-row">
-					<div class="vonarx-locator__chips" id="vonarx-category-chips" role="group" aria-label="<?php esc_attr_e( 'Filter by category', 'vonarx-distributor-locator' ); ?>">
-						<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
-							<button type="button" class="vonarx-chip" data-category="<?php echo esc_attr( $slug ); ?>" aria-pressed="false">
-								<?php echo esc_html( $label ); ?>
+				<div class="vonarx-locator__topbar-row">
+					<div class="vonarx-locator__search-wrap">
+						<div class="vonarx-locator__search-row">
+							<span class="vonarx-locator__search-icon" aria-hidden="true"><?php echo $this->icon( 'search' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
+							<input
+								type="text"
+								id="vonarx-location-search"
+								class="vonarx-locator__search-input"
+								role="combobox"
+								aria-expanded="false"
+								aria-autocomplete="list"
+								aria-controls="vonarx-location-search-results"
+								autocomplete="off"
+								placeholder="<?php esc_attr_e( 'Search location...', 'vonarx-distributor-locator' ); ?>"
+							/>
+							<button
+								type="button"
+								id="vonarx-locate-btn"
+								class="vonarx-locator__locate-btn"
+								aria-label="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
+								title="<?php esc_attr_e( 'Use my location', 'vonarx-distributor-locator' ); ?>"
+							>
+								<?php echo $this->icon( 'locate' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
 							</button>
-						<?php endforeach; ?>
-					</div>
-
-					<!-- Mobile/tablet-portrait (<1024px) equivalent of the chips above:
-					     a checkbox-list-in-a-popover instead of a row of toggle chips.
-					     Shares the same selection state via JS; CSS shows only one of
-					     the two depending on viewport width. -->
-					<div class="vonarx-locator__category-dropdown" id="vonarx-category-dropdown">
-						<button
-							type="button"
-							class="vonarx-locator__category-dropdown-toggle"
-							id="vonarx-category-dropdown-toggle"
-							aria-haspopup="true"
-							aria-expanded="false"
-							aria-controls="vonarx-category-dropdown-panel"
-						>
-							<span class="vonarx-locator__category-dropdown-label"><?php esc_html_e( 'Filter by category', 'vonarx-distributor-locator' ); ?></span>
-							<span class="vonarx-locator__category-dropdown-icon" aria-hidden="true"><?php echo $this->icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
-						</button>
-						<div class="vonarx-locator__category-dropdown-panel" id="vonarx-category-dropdown-panel" hidden>
-							<ul class="vonarx-locator__category-dropdown-list">
-								<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
-									<li>
-										<label class="vonarx-locator__category-dropdown-item">
-											<input type="checkbox" class="vonarx-locator__category-dropdown-checkbox" value="<?php echo esc_attr( $slug ); ?>" />
-											<span><?php echo esc_html( $label ); ?></span>
-										</label>
-									</li>
-								<?php endforeach; ?>
-							</ul>
+							<ul id="vonarx-location-search-results" class="vonarx-locator__search-results" role="listbox" hidden></ul>
 						</div>
+						<div id="vonarx-locate-status" class="vonarx-locator__locate-status" role="status" aria-live="polite" hidden></div>
 					</div>
 
-					<button type="button" class="vonarx-locator__clear-chips" id="vonarx-clear-chips" hidden>
-						<?php echo $this->icon( 'x' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
-						<?php esc_html_e( 'Clear all', 'vonarx-distributor-locator' ); ?>
-					</button>
+					<div class="vonarx-locator__chips-row">
+						<div class="vonarx-locator__chips" id="vonarx-category-chips" role="group" aria-label="<?php esc_attr_e( 'Filter by category', 'vonarx-distributor-locator' ); ?>">
+							<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
+								<button type="button" class="vonarx-chip" data-category="<?php echo esc_attr( $slug ); ?>" aria-pressed="false">
+									<?php echo esc_html( $label ); ?>
+								</button>
+							<?php endforeach; ?>
+						</div>
+
+						<!-- Mobile/tablet-portrait (<1024px) equivalent of the chips above:
+						     a checkbox-list-in-a-popover instead of a row of toggle chips.
+						     Shares the same selection state via JS; CSS shows only one of
+						     the two depending on viewport width. -->
+						<div class="vonarx-locator__category-dropdown" id="vonarx-category-dropdown">
+							<button
+								type="button"
+								class="vonarx-locator__category-dropdown-toggle"
+								id="vonarx-category-dropdown-toggle"
+								aria-haspopup="true"
+								aria-expanded="false"
+								aria-controls="vonarx-category-dropdown-panel"
+							>
+								<span class="vonarx-locator__category-dropdown-label"><?php esc_html_e( 'Filter by category', 'vonarx-distributor-locator' ); ?></span>
+								<span class="vonarx-locator__category-dropdown-icon" aria-hidden="true"><?php echo $this->icon( 'chevron' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?></span>
+							</button>
+							<div class="vonarx-locator__category-dropdown-panel" id="vonarx-category-dropdown-panel" hidden>
+								<ul class="vonarx-locator__category-dropdown-list">
+									<?php foreach ( $this->get_categories() as $slug => $label ) : ?>
+										<li>
+											<label class="vonarx-locator__category-dropdown-item">
+												<input type="checkbox" class="vonarx-locator__category-dropdown-checkbox" value="<?php echo esc_attr( $slug ); ?>" />
+												<span><?php echo esc_html( $label ); ?></span>
+											</label>
+										</li>
+									<?php endforeach; ?>
+								</ul>
+							</div>
+						</div>
+
+						<button type="button" class="vonarx-locator__clear-chips" id="vonarx-clear-chips" hidden>
+							<?php echo $this->icon( 'x' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- hardcoded SVG, see icon() docblock. ?>
+							<?php esc_html_e( 'Clear all', 'vonarx-distributor-locator' ); ?>
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -257,7 +256,6 @@ class Vonarx_Locator_Shortcode {
 
 					</div>
 				</aside>
-			</div>
 			</div>
 
 		</div>
