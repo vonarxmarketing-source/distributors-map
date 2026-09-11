@@ -715,9 +715,9 @@
 		 * -> continent, lowercased/trimmed for lookup. Covers common
 		 * alternate names/spellings so real-world data entry variance
 		 * doesn't dump things into "Other". Only Europe/North America/Asia/
-		 * Oceania have their own filter tab (see the PHP-rendered buttons in
-		 * #vonarx-continent-tabs); anything else — including "Other" — is
-		 * only reachable via the "All" tab.
+		 * Africa/Oceania have their own filter tab (see the PHP-rendered
+		 * buttons in #vonarx-continent-tabs); anything else — including
+		 * "Other" — is only reachable via the "All" tab.
 		 */
 		var CONTINENT_BY_COUNTRY = {
 			// Africa
