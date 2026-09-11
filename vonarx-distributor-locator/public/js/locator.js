@@ -239,8 +239,12 @@
 
 		/**
 		 * Single-open accordion: opens groupEl and closes every other country
-		 * group in the sidebar list. Selecting the already-open group is a
-		 * no-op (like a tab, it stays open) rather than collapsing to none.
+		 * group in the sidebar list. Used for "make this group visible" call
+		 * sites (a map marker/search result selecting a location in it) that
+		 * always want it open; the group heading's own click handler below
+		 * calls this only when opening a closed group, and closes an already-
+		 * open one itself instead (a plain toggle would fight this function's
+		 * "close every other group" behavior).
 		 */
 		function selectCountryGroup( groupEl ) {
 			if ( ! groupEl ) {
@@ -315,7 +319,12 @@
 					// closure over it would always resolve to the last group
 					// by the time this fires.
 					heading.addEventListener( 'click', function () {
-						selectCountryGroup( this.closest( '.vonarx-locator__country-group' ) );
+						var clickedGroup = this.closest( '.vonarx-locator__country-group' );
+						if ( clickedGroup.classList.contains( 'is-open' ) ) {
+							setCountryGroupOpen( clickedGroup, false );
+						} else {
+							selectCountryGroup( clickedGroup );
+						}
 					} );
 
 					var itemsList = document.createElement( 'ul' );
