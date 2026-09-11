@@ -4,7 +4,7 @@ Tags: store locator, map, distributors, leaflet
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Manage VonArx distributor locations and display them on an interactive map with 
 3. Add the `[vonarx_locator]` shortcode to any page to display the map.
 
 == Changelog ==
+
+= 1.8.1 =
+* Sidebar: every country's accordion section now starts collapsed (previously the first one opened automatically) — all of them open only when clicked, or automatically when you select a location on the map.
 
 = 1.8.0 =
 * Import: added an opt-in "Replace all" checkbox. Unchecked (the default), importing only creates/updates the rows in the file, same as before. Checked, the file becomes the full source of truth: any existing location not in it is moved to the Trash (not permanently deleted, so it's still recoverable from Distributor Locations → Trash).

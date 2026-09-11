@@ -293,23 +293,21 @@
 
 			// Stores already arrive sorted by country from the REST API; group
 			// consecutive same-country entries into a collapsible accordion
-			// section each. Only the first one starts open — see
-			// selectCountryGroup() above for the single-open behavior.
+			// section each. All start closed — see selectCountryGroup() above
+			// for the single-open behavior once one is clicked open.
 			var currentGroup = null;
 			var lastCountry = null;
-			var isFirstGroup = true;
 
 			stores.forEach( function ( store ) {
 				var country = store.country || 'Other';
 				if ( country !== lastCountry ) {
 					currentGroup = document.createElement( 'li' );
 					currentGroup.className = 'vonarx-locator__country-group';
-					currentGroup.classList.toggle( 'is-open', isFirstGroup );
 
 					var heading = document.createElement( 'button' );
 					heading.type = 'button';
 					heading.className = 'vonarx-locator__group-heading';
-					heading.setAttribute( 'aria-expanded', isFirstGroup ? 'true' : 'false' );
+					heading.setAttribute( 'aria-expanded', 'false' );
 					heading.innerHTML = '<span>' + escapeHtml( country ) + '</span>' +
 						'<span class="vonarx-locator__group-chevron" aria-hidden="true">' + CHEVRON_ICON + '</span>';
 					// this.closest(...) rather than closing over currentGroup:
@@ -322,14 +320,13 @@
 
 					var itemsList = document.createElement( 'ul' );
 					itemsList.className = 'vonarx-locator__group-items';
-					itemsList.hidden = ! isFirstGroup;
+					itemsList.hidden = true;
 
 					currentGroup.appendChild( heading );
 					currentGroup.appendChild( itemsList );
 					storeListEl.appendChild( currentGroup );
 
 					lastCountry = country;
-					isFirstGroup = false;
 				}
 
 				var li = document.createElement( 'li' );
