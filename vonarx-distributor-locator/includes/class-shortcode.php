@@ -250,7 +250,7 @@ class Vonarx_Locator_Shortcode {
 					<div class="vonarx-locator__sidebar-content" id="vonarx-locator-sidebar-content">
 
 						<div class="vonarx-locator__results">
-							<h3 class="vonarx-locator__results-heading"><?php esc_html_e( 'Distributor Locations', 'vonarx-distributor-locator' ); ?></h3>
+							<h3 class="vonarx-locator__results-heading"><?php esc_html_e( "Distributor's list", 'vonarx-distributor-locator' ); ?></h3>
 							<ul id="vonarx-store-list" class="vonarx-locator__list"></ul>
 						</div>
 
