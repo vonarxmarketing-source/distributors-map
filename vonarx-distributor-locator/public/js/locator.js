@@ -715,9 +715,9 @@
 		 * -> continent, lowercased/trimmed for lookup. Covers common
 		 * alternate names/spellings so real-world data entry variance
 		 * doesn't dump things into "Other". Only Europe/North America/Asia/
-		 * Australia/Oceania have their own filter tab (see the PHP-rendered
-		 * buttons in #vonarx-continent-tabs); anything else — including
-		 * "Other" — is only reachable via the "All" tab.
+		 * Oceania have their own filter tab (see the PHP-rendered buttons in
+		 * #vonarx-continent-tabs); anything else — including "Other" — is
+		 * only reachable via the "All" tab.
 		 */
 		var CONTINENT_BY_COUNTRY = {
 			// Africa
@@ -784,9 +784,8 @@
 			guyana: 'South America', paraguay: 'South America', peru: 'South America',
 			suriname: 'South America', uruguay: 'South America', venezuela: 'South America',
 
-			// Australia gets its own tab, split out from the rest of Oceania.
-			australia: 'Australia',
-			fiji: 'Oceania', kiribati: 'Oceania', 'marshall islands': 'Oceania',
+			// Oceania (Australia included, one tab for the whole region).
+			australia: 'Oceania', fiji: 'Oceania', kiribati: 'Oceania', 'marshall islands': 'Oceania',
 			micronesia: 'Oceania', nauru: 'Oceania', 'new zealand': 'Oceania', palau: 'Oceania',
 			'papua new guinea': 'Oceania', samoa: 'Oceania', 'solomon islands': 'Oceania',
 			tonga: 'Oceania', tuvalu: 'Oceania', vanuatu: 'Oceania',
